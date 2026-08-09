@@ -1,5 +1,7 @@
 # Banking Application
 
+![CI](https://github.com/Houcineee/bank-app/actions/workflows/ci.yml/badge.svg)
+
 A production-grade banking system built with Java and Spring Boot, designed as a learning project to deeply understand backend engineering, from database transactions to deployment.
 
 ## Tech Stack

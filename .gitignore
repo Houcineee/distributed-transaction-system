@@ -2,6 +2,7 @@
 .internship/
 findings/
 
+.agents/
 # Java / Spring Boot
 target/
 *.class
