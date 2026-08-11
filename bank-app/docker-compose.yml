@@ -1,8 +1,7 @@
 services:
  db_service:
    image : postgres:17
-   ports:
-     - "5432:5432"
+   network_mode: "host"
    volumes:
      - db_data:/var/lib/postgresql/data
    environment:
