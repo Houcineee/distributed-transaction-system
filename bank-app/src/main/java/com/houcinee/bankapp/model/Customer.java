@@ -6,18 +6,22 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.UuidGenerator;
+import org.hibernate.id.uuid.UuidVersion7Strategy;
 
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @NoArgsConstructor
 @Getter
 @Setter
 @Table(name = "customers")
-public class Customer  {
+public class Customer  extends BaseEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue
+    @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
+    private UUID id ;
     @NotNull
     @Column(nullable = false)
     private String name ;
