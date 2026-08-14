@@ -47,13 +47,6 @@ public class GlobalExceptionHandler {
 
     // HELPER METHOD to create ErrorResponse
     private ErrorResponse buildErrorResponse(HttpStatus status, String message, String path) {
-        return ErrorResponse.builder()
-                .correlationId(MDC.get("correlationId"))
-                .status(status.value())
-                .error(status.getReasonPhrase())
-                .message(message)
-                .path(path)
-                .timestamp(LocalDateTime.now())
-                .build();
+        return ErrorResponse.builder().correlationId(MDC.get("correlationId")).status(status.value()).error(status.getReasonPhrase()).message(message).path(path).timestamp(LocalDateTime.now()).build();
     }
 }

@@ -7,18 +7,17 @@ import com.houcinee.bankapp.repository.TransactionRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
-
 @Service
 public class TransactionLoggerService {
-    private final TransactionRepository transactionRepository;
+	private final TransactionRepository transactionRepository;
 
-    public TransactionLoggerService(TransactionRepository transactionRepository ){
-        this.transactionRepository = transactionRepository ;
-    }
+	public TransactionLoggerService(TransactionRepository transactionRepository) {
+		this.transactionRepository = transactionRepository;
+	}
 
-    @Transactional(Transactional.TxType.REQUIRES_NEW)
-    public void saveTransaction(Long amount , Account srcAccount , Account destAccount , TransactionStatus status) {
-        Transaction transaction = new Transaction(amount , srcAccount , destAccount , status);
-        transactionRepository.save(transaction);
-    }
+	@Transactional(Transactional.TxType.REQUIRES_NEW)
+	public void saveTransaction(Long amount, Account srcAccount, Account destAccount, TransactionStatus status) {
+		Transaction transaction = new Transaction(amount, srcAccount, destAccount, status);
+		transactionRepository.save(transaction);
+	}
 }
