@@ -11,8 +11,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -21,9 +19,7 @@ import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@ActiveProfiles("test")
-@SpringBootTest
-public class TransactionServiceIT {
+public class TransactionServiceIT extends BaseIntegrationTest {
 	@Autowired
 	TransactionService transactionService;
 	@Autowired
@@ -61,7 +57,6 @@ public class TransactionServiceIT {
 		ExecutorService executor = Executors.newFixedThreadPool(threadCount);
 		CountDownLatch gateLatch = new CountDownLatch(1);
 		CountDownLatch doneLatch = new CountDownLatch(threadCount);
-		java.util.concurrent.atomic.AtomicInteger errorCount = new java.util.concurrent.atomic.AtomicInteger(0);
 
 		for (int i = 0; i < threadCount; i++) {
 			executor.submit(() -> {
@@ -69,8 +64,7 @@ public class TransactionServiceIT {
 					gateLatch.await();
 					transactionService.transferMoney(srcAccountId, destAccountId, 10L);
 				} catch (Exception e) {
-					errorCount.incrementAndGet();
-					e.printStackTrace();
+					throw new RuntimeException("Exception in worker thread: " + e.getMessage(), e);
 				} finally {
 					doneLatch.countDown();
 				}
@@ -80,7 +74,6 @@ public class TransactionServiceIT {
 		doneLatch.await();
 		executor.shutdown();
 
-		assertEquals(0, errorCount.get(), "There were exceptions in the worker threads! Check the console.");
 
 		Account src = accountRepository.findById(srcAccountId).orElseThrow();
 		Account dest = accountRepository.findById(destAccountId).orElseThrow();
