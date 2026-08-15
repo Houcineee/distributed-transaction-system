@@ -31,4 +31,9 @@ public class Customer extends BaseEntity {
 
 	@OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
 	List<Account> accounts;
+
+	public Customer(String name, String email) {
+		this.name = name;
+		this.email = email;
+	}
 }
