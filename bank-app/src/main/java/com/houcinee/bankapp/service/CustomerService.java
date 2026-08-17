@@ -2,7 +2,7 @@ package com.houcinee.bankapp.service;
 
 import com.houcinee.bankapp.dto.CreateCustomerRequest;
 import com.houcinee.bankapp.dto.CustomerResponse;
-import com.houcinee.bankapp.exception.DuplicateRessourceException;
+import com.houcinee.bankapp.exception.DuplicateResourceException;
 import com.houcinee.bankapp.exception.ResourceNotFoundException;
 import com.houcinee.bankapp.model.Customer;
 import com.houcinee.bankapp.repository.CustomerRepository;
@@ -26,7 +26,7 @@ public class CustomerService {
 		Boolean exist = customerRepository.existsCustomerByEmail(req.getEmail());
 
 		if (exist) {
-			throw new DuplicateRessourceException("Customer with email " + req.getEmail() + " already exists");
+			throw new DuplicateResourceException("Customer with email " + req.getEmail() + " already exists");
 		}
 
 		Customer newCustomer = new Customer(req.getName(), req.getEmail());

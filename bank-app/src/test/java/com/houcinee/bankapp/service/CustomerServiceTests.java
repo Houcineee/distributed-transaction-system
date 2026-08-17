@@ -3,7 +3,7 @@ package com.houcinee.bankapp.service;
 
 import com.houcinee.bankapp.dto.CreateCustomerRequest;
 import com.houcinee.bankapp.dto.CustomerResponse;
-import com.houcinee.bankapp.exception.DuplicateRessourceException;
+import com.houcinee.bankapp.exception.DuplicateResourceException;
 import com.houcinee.bankapp.exception.ResourceNotFoundException;
 import com.houcinee.bankapp.model.Customer;
 import com.houcinee.bankapp.repository.CustomerRepository;
@@ -20,7 +20,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 
 @ExtendWith(MockitoExtension.class)
@@ -46,6 +46,8 @@ public class CustomerServiceTests {
 		CustomerResponse res = customerService.createCustomer(req) ;
 
 
+		verify(customerRepository).existsCustomerByEmail(email);
+		verify(customerRepository).save(any(Customer.class));
 		assertEquals(customerMock.getId() , res.getId()) ;
 		assertEquals(customerMock.getName() , res.getName());
 		assertEquals(customerMock.getEmail() , res.getEmail());
@@ -61,8 +63,10 @@ public class CustomerServiceTests {
 		                                                 .name(name).build();
 		when(customerRepository.existsCustomerByEmail(email)).thenReturn(true);
 
-		Exception exception = assertThrows(DuplicateRessourceException.class , ()-> customerService.createCustomer(req)) ;
+		Exception exception = assertThrows(DuplicateResourceException.class , ()-> customerService.createCustomer(req)) ;
 
+		verify(customerRepository).existsCustomerByEmail(email);
+		verify(customerRepository, never()).save(any(Customer.class));
 		assertEquals("Customer with email " + req.getEmail() + " already exists" , exception.getMessage());
 
 	}
