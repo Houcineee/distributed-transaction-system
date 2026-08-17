@@ -45,6 +45,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
 
+    @ExceptionHandler(DuplicateRessourceException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateResourceException(DuplicateRessourceException ex, HttpServletRequest request) {
+        log.warn("Duplicate resource: {}", ex.getMessage());
+        ErrorResponse error = buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage(), request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
     // HELPER METHOD to create ErrorResponse
     private ErrorResponse buildErrorResponse(HttpStatus status, String message, String path) {
         return ErrorResponse.builder().correlationId(MDC.get("correlationId")).status(status.value()).error(status.getReasonPhrase()).message(message).path(path).timestamp(LocalDateTime.now()).build();

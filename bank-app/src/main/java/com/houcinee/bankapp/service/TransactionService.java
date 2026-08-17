@@ -5,11 +5,13 @@ import com.houcinee.bankapp.exception.ResourceNotFoundException;
 import com.houcinee.bankapp.model.Account;
 import com.houcinee.bankapp.repository.AccountRepository;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
 @Service
+@Slf4j
 public class TransactionService {
 	private final AccountRepository accountRepository;
 	private final TransactionLoggerService transactionLoggerService;
@@ -21,6 +23,7 @@ public class TransactionService {
 
 	@Transactional
 	public void transferMoney(UUID sourceAccountId, UUID destinationAccountId, Long amount) {
+		log.info("Initiating transfer of {} from account {} to account {}", amount, sourceAccountId, destinationAccountId);
 		validateTransfer(sourceAccountId, destinationAccountId, amount);
 		Account[] accounts = getAccountInLockOrder(sourceAccountId, destinationAccountId);
 
