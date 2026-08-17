@@ -6,8 +6,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 
@@ -30,10 +33,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
-    @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidationException(org.springframework.web.bind.MethodArgumentNotValidException ex, HttpServletRequest request) {
-        log.warn("Validation failed: {}", ex.getMessage());
-        ErrorResponse error = buildErrorResponse(HttpStatus.BAD_REQUEST, "Validation failed for one or more fields.", request.getRequestURI());
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException ex, HttpServletRequest request) {
+        String msg = ex.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .reduce((first, second) -> first + ", " + second)
+                .orElse("Validation failed");
+
+        log.warn("Validation failed: {}", msg);
+        ErrorResponse error = buildErrorResponse(HttpStatus.BAD_REQUEST, msg, request.getRequestURI());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
@@ -47,9 +55,34 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DuplicateRessourceException.class)
     public ResponseEntity<ErrorResponse> handleDuplicateResourceException(DuplicateRessourceException ex, HttpServletRequest request) {
-        log.warn("Duplicate resource: {}", ex.getMessage());
+        log.warn("Duplicate resource: {}", ex.getMessage() );
         ErrorResponse error = buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage(), request.getRequestURI());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidArguments(MethodArgumentTypeMismatchException ex , HttpServletRequest request){
+        log.warn("URL Parameter format invalid for field '{}': {}", ex.getName(), ex.getValue());
+
+        String msg = "Invalid format for parameter: " + ex.getName();
+
+        ErrorResponse error = buildErrorResponse(HttpStatus.BAD_REQUEST, msg, request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResourceFoundException(org.springframework.web.servlet.resource.NoResourceFoundException ex, HttpServletRequest request) {
+        log.warn("No resource found: {}", request.getRequestURI());
+        ErrorResponse error = buildErrorResponse(HttpStatus.NOT_FOUND, "The requested endpoint does not exist.", request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(org.springframework.web.HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMethodNotSupportedException(org.springframework.web.HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
+        log.warn("Method not supported: {} for URI: {}", ex.getMethod(), request.getRequestURI());
+        ErrorResponse error = buildErrorResponse(HttpStatus.METHOD_NOT_ALLOWED, "HTTP method '" + ex.getMethod() + "' is not supported for this endpoint.", request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(error);
     }
 
     // HELPER METHOD to create ErrorResponse

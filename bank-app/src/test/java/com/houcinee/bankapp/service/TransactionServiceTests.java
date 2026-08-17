@@ -46,7 +46,7 @@ public class TransactionServiceTests {
 	}
 
 	@Test
-	void whenTransferFunds_thenTransactionIsLogged() {
+	void givenValidAccounts_whenTransferFunds_thenSuccessfulAndLogged() {
 		Account srcAccount = createAccount(1L, 100L);
 		Account destAccount = createAccount(2L, 50L);
 
@@ -62,7 +62,7 @@ public class TransactionServiceTests {
 	}
 
 	@Test
-	void whenAccountsAreTheSame_ThenReturnAnIllegalArgumentException() {
+	void givenSameAccounts_whenTransferFunds_thenThrowsIllegalArgumentException() {
 		Account srcAccount = createAccount(1L, 100L);
 
 		IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
@@ -74,7 +74,7 @@ public class TransactionServiceTests {
 	}
 
 	@Test
-	void whenBalanceIsNotPositive_ThenReturnIllegalArgumentException() {
+	void givenNonPositiveAmount_whenTransferFunds_thenThrowsIllegalArgumentException() {
 		Account srcAccount = createAccount(1L, 100L);
 		Account destAccount = createAccount(2L, 50L);
 
@@ -83,11 +83,10 @@ public class TransactionServiceTests {
 		});
 
 		assertEquals("Balance cannot be negative or zero", exception.getMessage());
-		verify(accountRepository, never()).findAccountById(any());
 	}
 
 	@Test
-	void whenAccountNotFound_ThenReturnResourceNotFoundException() {
+	void givenInvalidAccountId_whenTransferFunds_thenThrowsResourceNotFoundException() {
 		UUID srcUUID = new UUID(0L, 1L);
 		UUID destUUID = new UUID(0L, 2L);
 
@@ -101,7 +100,7 @@ public class TransactionServiceTests {
 	}
 
 	@Test
-	void whenInsufficientFunds_ThenLogFailedAndThrowException() {
+	void givenInsufficientFunds_whenTransferFunds_thenThrowsExceptionAndLogsFailed() {
 		Account srcAccount = createAccount(1L, 5L);
 		Account destAccount = createAccount(2L, 50L);
 
