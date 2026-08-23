@@ -16,8 +16,8 @@ public class TransactionLoggerService {
 	}
 
 	@Transactional(Transactional.TxType.REQUIRES_NEW)
-	public void saveTransaction(Long amount, Account srcAccount, Account destAccount, TransactionStatus status) {
+	public Transaction saveTransaction(Long amount, Account srcAccount, Account destAccount, TransactionStatus status) {
 		Transaction transaction = new Transaction(amount, srcAccount, destAccount, status);
-		transactionRepository.save(transaction);
+		return transactionRepository.save(transaction);
 	}
 }
