@@ -62,6 +62,7 @@ public class TransactionService {
 
 
 	public Page<TransactionResponse> getTransactionsByAccountId(UUID id , Pageable pageable){
+		log.info("Fetching paginated transaction history for account id: {}", id);
 		if(!accountRepository.existsById(id)){
 			throw new ResourceNotFoundException("Account not found with id: " + id) ;
 		}

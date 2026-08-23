@@ -49,6 +49,7 @@ public class AccountService {
 
 
 	public List<AccountResponse> getAccountsByCustomerId(UUID id){
+		log.info("Fetching all accounts for customer id: {}", id);
 		if(!customerRepository.existsById(id)){
 			throw new ResourceNotFoundException("Customer not found with id: " + id) ;
 		}
