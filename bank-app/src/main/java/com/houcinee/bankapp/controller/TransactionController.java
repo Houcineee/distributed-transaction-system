@@ -21,7 +21,7 @@ public class TransactionController {
 	public ResponseEntity<TransactionResponse> transferMoney(@RequestBody @Valid TransactionRequest  transactionRequest){
 		TransactionResponse transaction = transactionService.transferMoney(transactionRequest.getSrcAccount(),
 				transactionRequest.getDestAccount(),
-				transactionRequest.getBalance());
+				transactionRequest.getAmount());
 		return ResponseEntity.status(HttpStatus.OK).body(transaction) ;
 	}
 

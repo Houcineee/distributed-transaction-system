@@ -41,7 +41,7 @@ class TransactionControllerTest {
         TransactionRequest request = TransactionRequest.builder()
                 .srcAccount(srcAccount)
                 .destAccount(destAccount)
-                .balance(5000L)
+                .amount(5000L)
                 .build();
 
         TransactionResponse response = TransactionResponse.builder()
@@ -68,7 +68,7 @@ class TransactionControllerTest {
         TransactionRequest request = TransactionRequest.builder()
                 .srcAccount(UUID.randomUUID())
                 .destAccount(UUID.randomUUID())
-                .balance(-100L)
+                .amount(-100L)
                 .build();
 
         mockMvc.perform(post("/api/v1/transfers")

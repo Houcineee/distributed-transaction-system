@@ -20,5 +20,5 @@ public class TransactionRequest {
 	private UUID destAccount ;
 	@NotNull
 	@Positive
-	private Long balance ;
+	private Long amount ;
 }

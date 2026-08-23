@@ -72,7 +72,7 @@ public class BankApiIntegrationTest extends BaseIntegrationTest {
         TransactionRequest transferReq = TransactionRequest.builder()
                 .srcAccount(UUID.fromString(accountAId))
                 .destAccount(UUID.fromString(accountBId))
-                .balance(5000L) // $50.00
+                .amount(5000L) // $50.00
                 .build();
 
         mockMvc.perform(post("/api/v1/transfers")
@@ -111,7 +111,7 @@ public class BankApiIntegrationTest extends BaseIntegrationTest {
         TransactionRequest transferReq = TransactionRequest.builder()
                 .srcAccount(UUID.fromString(accountCId))
                 .destAccount(UUID.fromString(accountDId))
-                .balance(5000L) // $50.00
+                .amount(5000L) // $50.00
                 .build();
 
         mockMvc.perform(post("/api/v1/transfers")

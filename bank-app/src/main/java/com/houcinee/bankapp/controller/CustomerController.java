@@ -26,12 +26,12 @@ public class CustomerController {
 
 	@GetMapping("/api/v1/customers/{id}")
 	ResponseEntity<CustomerResponse> getCustomerById(@PathVariable UUID id) {
-		return ResponseEntity.status(200).body(customerService.getCustomerById(id));
+		return ResponseEntity.status(HttpStatus.OK).body(customerService.getCustomerById(id));
 	}
 
 	@PostMapping("/api/v1/customers")
 	ResponseEntity<CustomerResponse> createCustomer(@Valid @RequestBody CreateCustomerRequest req) {
-		return ResponseEntity.status(201).body(customerService.createCustomer(req));
+		return ResponseEntity.status(HttpStatus.CREATED).body(customerService.createCustomer(req));
 	}
 
 	@GetMapping("/api/v1/customers/{id}/accounts")
