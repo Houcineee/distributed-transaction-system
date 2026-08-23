@@ -2,9 +2,7 @@ package com.houcinee.bankapp.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.util.List;
@@ -27,6 +25,7 @@ public class Customer extends BaseEntity {
 	@NotNull
 	@Column(nullable = false, unique = true)
 	private String email;
+
 
 	@OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
 	List<Account> accounts;

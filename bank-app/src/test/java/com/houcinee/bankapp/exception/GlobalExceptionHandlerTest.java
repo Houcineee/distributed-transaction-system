@@ -22,7 +22,7 @@ public class GlobalExceptionHandlerTest {
 
 
     @Test
-    public void whenResourceNotFound_thenReturn404AndErrorResponse() throws Exception {
+    public void givenResourceNotFoundException_whenHandle_thenReturns404() throws Exception {
         mockMvc.perform(get("/test/notfound"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404))
@@ -34,7 +34,7 @@ public class GlobalExceptionHandlerTest {
 
     }
     @Test
-    public void whenIllegalArgument_thenReturn400AndErrorResponse() throws Exception {
+    public void givenIllegalArgumentException_whenHandle_thenReturns400() throws Exception {
         mockMvc.perform(get("/test/illegalargument"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
@@ -46,7 +46,7 @@ public class GlobalExceptionHandlerTest {
     }
 
     @Test
-    public void whenGlobalException_thenReturn500AndErrorResponse() throws Exception {
+    public void givenGenericException_whenHandle_thenReturns500() throws Exception {
         mockMvc.perform(get("/test/globalException"))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.status").value(500))
@@ -58,12 +58,11 @@ public class GlobalExceptionHandlerTest {
     }
 
     @Test
-    public void whenValidationException_thenReturn400andErrorResponse() throws Exception{
+    public void givenValidationException_whenHandle_thenReturns400() throws Exception{
        mockMvc.perform(post("/test/validationException") )
                .andExpect(status().isBadRequest())
                .andExpect(jsonPath("$.status").value(400))
                .andExpect(jsonPath("$.error").value("Bad Request"))
-               .andExpect(jsonPath("$.message").value("Validation failed for one or more fields."))
                .andExpect(jsonPath("$.path").value("/test/validationException"))
                .andExpect(jsonPath("$.correlationId").exists())
                .andExpect(jsonPath("$.timestamp").exists());

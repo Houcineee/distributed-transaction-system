@@ -3,6 +3,8 @@ package com.houcinee.bankapp.model;
 import com.houcinee.bankapp.enums.Currency;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.UuidGenerator;
