@@ -5,6 +5,7 @@ import com.houcinee.bankapp.dto.CreateCustomerRequest;
 import com.houcinee.bankapp.dto.CustomerResponse;
 import com.houcinee.bankapp.repository.CustomerRepository;
 import com.houcinee.bankapp.service.CustomerService;
+import com.houcinee.bankapp.service.AccountService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -32,6 +33,9 @@ class CustomerControllerTest {
 
     @MockitoBean
     private CustomerService customerService;
+
+    @MockitoBean
+    private AccountService accountService;
 
     @Test
     void givenValidRequest_whenCreateCustomer_thenReturns201() throws Exception {

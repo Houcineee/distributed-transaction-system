@@ -4,6 +4,7 @@ package com.houcinee.bankapp.service;
 import com.houcinee.bankapp.enums.Currency;
 import com.houcinee.bankapp.exception.ResourceNotFoundException;
 import com.houcinee.bankapp.model.Account;
+import com.houcinee.bankapp.model.Transaction;
 import com.houcinee.bankapp.model.Customer;
 import com.houcinee.bankapp.repository.AccountRepository;
 import org.junit.jupiter.api.Test;
@@ -50,8 +51,12 @@ public class TransactionServiceTests {
 		Account srcAccount = createAccount(1L, 100L);
 		Account destAccount = createAccount(2L, 50L);
 
+		Transaction dummyTransaction = new Transaction(10L, srcAccount, destAccount, COMPLETED);
+		ReflectionTestUtils.setField(dummyTransaction, "id", UUID.randomUUID());
+		
 		when(accountRepository.findAccountById(srcAccount.getId())).thenReturn(Optional.of(srcAccount));
 		when(accountRepository.findAccountById(destAccount.getId())).thenReturn(Optional.of(destAccount));
+		when(transactionLoggerService.saveTransaction(10L, srcAccount, destAccount, COMPLETED)).thenReturn(dummyTransaction);
 
 		transactionService.transferMoney(srcAccount.getId(), destAccount.getId(), 10L);
 
