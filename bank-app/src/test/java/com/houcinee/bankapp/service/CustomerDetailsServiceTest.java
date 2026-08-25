@@ -28,7 +28,7 @@ class CustomerDetailsServiceTest {
     void loadUserByUsername_Success() {
         // Arrange
         String email = "houcine@bank.com";
-        Customer mockCustomer = new Customer("Houcine", email);
+        Customer mockCustomer = new Customer("Houcine", email, "password", com.houcinee.bankapp.enums.Role.USER);
         when(customerRepository.findByEmail(email)).thenReturn(Optional.of(mockCustomer));
 
         // Act

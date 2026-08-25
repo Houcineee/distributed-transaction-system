@@ -38,7 +38,7 @@ public class TransactionServiceTests {
 	private TransactionService transactionService;
 
 	private Account createAccount(long leastSigBits, long balance) {
-		Customer customer = new Customer("Test Customer", "test@bank.com");
+		Customer customer = new Customer("Test Customer", "test@bank.com", "password", com.houcinee.bankapp.enums.Role.USER);
 		ReflectionTestUtils.setField(customer, "id", UUID.randomUUID());
 
 		Account account = new Account(balance, Currency.MAD, customer);

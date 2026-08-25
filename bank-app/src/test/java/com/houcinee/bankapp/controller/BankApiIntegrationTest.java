@@ -2,7 +2,7 @@ package com.houcinee.bankapp.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.houcinee.bankapp.dto.CreateAccountRequest;
-import com.houcinee.bankapp.dto.CreateCustomerRequest;
+import com.houcinee.bankapp.dto.RegisterRequest;
 import com.houcinee.bankapp.dto.TransactionRequest;
 import com.houcinee.bankapp.enums.Currency;
 import com.houcinee.bankapp.model.Account;
@@ -134,8 +134,8 @@ public class BankApiIntegrationTest extends BaseIntegrationTest {
 
     // --- Helpers to create a customer ---
     private String createCustomer(String name, String email) throws Exception {
-        CreateCustomerRequest req = CreateCustomerRequest.builder().name(name).email(email).build();
-        MvcResult result = mockMvc.perform(post("/api/v1/customers")
+        RegisterRequest req = RegisterRequest.builder().name(name).email(email).password("secure123").build();
+        MvcResult result = mockMvc.perform(post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isCreated())

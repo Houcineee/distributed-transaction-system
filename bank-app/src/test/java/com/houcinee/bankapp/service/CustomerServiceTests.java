@@ -1,7 +1,7 @@
 package com.houcinee.bankapp.service;
 
 
-import com.houcinee.bankapp.dto.CreateCustomerRequest;
+import com.houcinee.bankapp.dto.RegisterRequest;
 import com.houcinee.bankapp.dto.CustomerResponse;
 import com.houcinee.bankapp.exception.DuplicateResourceException;
 import com.houcinee.bankapp.exception.ResourceNotFoundException;
@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -27,6 +28,8 @@ import static org.mockito.Mockito.*;
 public class CustomerServiceTests {
 	@Mock
 	private CustomerRepository customerRepository;
+    @Mock
+    private PasswordEncoder passwordEncoder;
 
 	@InjectMocks
 	private CustomerService customerService;
@@ -35,10 +38,10 @@ public class CustomerServiceTests {
 	public void givenValidData_whenCreateCustomer_thenReturnsCustomerResponse(){
 		String email = "test@test.com" ;
 		String name = "test" ;
-		CreateCustomerRequest req = CreateCustomerRequest.builder()
+		RegisterRequest req = RegisterRequest.builder()
 		                                                 .email(email)
 		                                                 .name(name).build();
-		Customer customerMock = new Customer(name , email) ;
+		Customer customerMock = new Customer(name , email, "password", com.houcinee.bankapp.enums.Role.USER) ;
 		ReflectionTestUtils.setField(customerMock, "id", UUID.randomUUID());
 		when(customerRepository.existsCustomerByEmail(email)).thenReturn(false) ;
 		when(customerRepository.save(any(Customer.class))).thenReturn(customerMock) ;
@@ -58,7 +61,7 @@ public class CustomerServiceTests {
 	public void givenExistingEmail_whenCreateCustomer_thenThrowsDuplicateResourceException(){
 		String email = "test@test.com" ;
 		String name = "test" ;
-		CreateCustomerRequest req = CreateCustomerRequest.builder()
+		RegisterRequest req = RegisterRequest.builder()
 		                                                 .email(email)
 		                                                 .name(name).build();
 		when(customerRepository.existsCustomerByEmail(email)).thenReturn(true);
@@ -76,7 +79,7 @@ public class CustomerServiceTests {
 		String email = "test@test.com" ;
 		String name = "test" ;
 
-		Customer customerMock = new Customer(name , email) ;
+		Customer customerMock = new Customer(name , email, "password", com.houcinee.bankapp.enums.Role.USER) ;
 		ReflectionTestUtils.setField(customerMock, "id", UUID.randomUUID());
 		when(customerRepository.findById(customerMock.getId())).thenReturn(Optional.of(customerMock)) ;
 

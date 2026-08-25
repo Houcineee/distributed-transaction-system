@@ -58,9 +58,11 @@ public class Customer extends BaseEntity implements UserDetails {
 	@OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
 	List<Account> accounts;
 
-	public Customer(String name, String email) {
+	public Customer(String name, String email, String password, Role role) {
 		this.name = name;
 		this.email = email;
+		this.password = password;
+		this.role = role;
 	}
 
 	@Override
