@@ -3,7 +3,7 @@ package com.houcinee.bankapp.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.houcinee.bankapp.dto.RegisterRequest;
 import com.houcinee.bankapp.dto.CustomerResponse;
-import com.houcinee.bankapp.service.CustomerService;
+import com.houcinee.bankapp.service.AuthService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -29,7 +29,7 @@ class AuthControllerTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @MockitoBean
-    private CustomerService customerService;
+    private AuthService authService;
 
     @Test
     void givenValidRequest_whenCreateCustomer_thenReturns201() throws Exception {
@@ -46,7 +46,7 @@ class AuthControllerTest {
                 .createdAt(Instant.now())
                 .build();
 
-        when(customerService.createCustomer(any(RegisterRequest.class))).thenReturn(response);
+        when(authService.register(any(RegisterRequest.class))).thenReturn(response);
 
         mockMvc.perform(post("/api/v1/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)

@@ -11,32 +11,27 @@ import org.springframework.stereotype.Service;
 
 import java.util.UUID;
 
-import com.houcinee.bankapp.dto.RegisterRequest;
 import com.houcinee.bankapp.enums.Role;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Service
 @Slf4j
 public class CustomerService {
 	private final CustomerRepository customerRepository;
-	private final PasswordEncoder passwordEncoder;
 
-	public CustomerService(CustomerRepository customerRepository, PasswordEncoder passwordEncoder) {
+	public CustomerService(CustomerRepository customerRepository) {
 		this.customerRepository = customerRepository;
-		this.passwordEncoder = passwordEncoder;
 	}
 
-	public CustomerResponse createCustomer(RegisterRequest req) {
-		log.info("Attempting to create customer with email: {}", req.getEmail());
+	public CustomerResponse createCustomer(String name, String email, String hashedPassword, Role role) {
+		log.info("Attempting to create customer with email: {}", email);
 
-		Boolean exist = customerRepository.existsCustomerByEmail(req.getEmail());
+		Boolean exist = customerRepository.existsCustomerByEmail(email);
 
 		if (exist) {
-			throw new DuplicateResourceException("Customer with email " + req.getEmail() + " already exists");
+			throw new DuplicateResourceException("Customer with email " + email + " already exists");
 		}
 
-		String hashedPassword = passwordEncoder.encode(req.getPassword());
-		Customer newCustomer = new Customer(req.getName(), req.getEmail(), hashedPassword, Role.USER);
+		Customer newCustomer = new Customer(name, email, hashedPassword, role);
 
 		Customer savedCustomer = customerRepository.save(newCustomer);
 		log.info("Successfully created customer with id: {}", savedCustomer.getId());

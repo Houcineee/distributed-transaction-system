@@ -28,9 +28,6 @@ import static org.mockito.Mockito.*;
 public class CustomerServiceTests {
 	@Mock
 	private CustomerRepository customerRepository;
-    @Mock
-    private PasswordEncoder passwordEncoder;
-
 	@InjectMocks
 	private CustomerService customerService;
 
@@ -38,40 +35,33 @@ public class CustomerServiceTests {
 	public void givenValidData_whenCreateCustomer_thenReturnsCustomerResponse(){
 		String email = "test@test.com" ;
 		String name = "test" ;
-		RegisterRequest req = RegisterRequest.builder()
-		                                                 .email(email)
-		                                                 .name(name).build();
-		Customer customerMock = new Customer(name , email, "password", com.houcinee.bankapp.enums.Role.USER) ;
+		String hashedPassword = "hashedPassword";
+		Customer customerMock = new Customer(name , email, hashedPassword, com.houcinee.bankapp.enums.Role.USER) ;
 		ReflectionTestUtils.setField(customerMock, "id", UUID.randomUUID());
 		when(customerRepository.existsCustomerByEmail(email)).thenReturn(false) ;
 		when(customerRepository.save(any(Customer.class))).thenReturn(customerMock) ;
 
-		CustomerResponse res = customerService.createCustomer(req) ;
-
+		CustomerResponse res = customerService.createCustomer(name, email, hashedPassword, com.houcinee.bankapp.enums.Role.USER) ;
 
 		verify(customerRepository).existsCustomerByEmail(email);
 		verify(customerRepository).save(any(Customer.class));
 		assertEquals(customerMock.getId() , res.getId()) ;
 		assertEquals(customerMock.getName() , res.getName());
 		assertEquals(customerMock.getEmail() , res.getEmail());
-
 	}
 
 	@Test
 	public void givenExistingEmail_whenCreateCustomer_thenThrowsDuplicateResourceException(){
 		String email = "test@test.com" ;
 		String name = "test" ;
-		RegisterRequest req = RegisterRequest.builder()
-		                                                 .email(email)
-		                                                 .name(name).build();
+		String hashedPassword = "hashedPassword";
 		when(customerRepository.existsCustomerByEmail(email)).thenReturn(true);
 
-		Exception exception = assertThrows(DuplicateResourceException.class , ()-> customerService.createCustomer(req)) ;
+		Exception exception = assertThrows(DuplicateResourceException.class , ()-> customerService.createCustomer(name, email, hashedPassword, com.houcinee.bankapp.enums.Role.USER)) ;
 
 		verify(customerRepository).existsCustomerByEmail(email);
 		verify(customerRepository, never()).save(any(Customer.class));
-		assertEquals("Customer with email " + req.getEmail() + " already exists" , exception.getMessage());
-
+		assertEquals("Customer with email " + email + " already exists" , exception.getMessage());
 	}
 
 	@Test

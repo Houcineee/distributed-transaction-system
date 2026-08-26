@@ -132,6 +132,33 @@ public class BankApiIntegrationTest extends BaseIntegrationTest {
                 .andExpect(jsonPath("$.content[0].status").value("FAILED"));
     }
 
+    @Test
+    void registration_hashesPasswordInDatabase() throws Exception {
+        String rawPassword = "superSecretPassword!";
+        RegisterRequest req = RegisterRequest.builder()
+                .name("Eve")
+                .email("eve@hacker.com")
+                .password(rawPassword)
+                .build();
+
+        MvcResult result = mockMvc.perform(post("/api/v1/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String customerIdStr = JsonPath.read(result.getResponse().getContentAsString(), "$.id");
+        UUID customerId = UUID.fromString(customerIdStr);
+
+        com.houcinee.bankapp.model.Customer savedCustomer = customerRepository.findById(customerId).orElseThrow();
+        
+        // Assert that the database value is NOT the raw password
+        org.junit.jupiter.api.Assertions.assertNotEquals(rawPassword, savedCustomer.getPassword());
+        
+        // Bcrypt hashes start with $2a$, $2b$, or $2y$
+        org.junit.jupiter.api.Assertions.assertTrue(savedCustomer.getPassword().startsWith("$2a$"));
+    }
+
     // --- Helpers to create a customer ---
     private String createCustomer(String name, String email) throws Exception {
         RegisterRequest req = RegisterRequest.builder().name(name).email(email).password("secure123").build();
