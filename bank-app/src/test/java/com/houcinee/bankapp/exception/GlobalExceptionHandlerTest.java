@@ -14,12 +14,10 @@ import org.springframework.web.bind.annotation.RestController;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import com.houcinee.bankapp.controller.BaseWebMvcTest;
+
 @WebMvcTest(controllers = DummyController.class)
-public class GlobalExceptionHandlerTest {
-
-    @Autowired
-    private MockMvc mockMvc;
-
+public class GlobalExceptionHandlerTest extends BaseWebMvcTest {
 
     @Test
     public void givenResourceNotFoundException_whenHandle_thenReturns404() throws Exception {

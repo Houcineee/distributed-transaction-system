@@ -23,20 +23,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AuthController.class)
-class AuthControllerTest {
-
-    @Autowired
-    private MockMvc mockMvc;
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
+class AuthControllerTest extends BaseWebMvcTest {
 
     @MockitoBean
     private AuthService authService;
 
     @MockitoBean
     private AuthenticationManager authenticationManager;
-    @MockitoBean
-    private JwtService jwtService ;
 
     @Test
     void givenValidRequest_whenCreateCustomer_thenReturns201() throws Exception {

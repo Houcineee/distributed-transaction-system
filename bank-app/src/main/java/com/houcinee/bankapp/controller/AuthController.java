@@ -16,6 +16,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
@@ -38,6 +41,7 @@ public class AuthController {
                         request.getPassword()
                 )
         );
+        log.info("User {} successfully logged in", request.getEmail());
         String token = jwtService.generateToken((UserDetails) authentication.getPrincipal());
         return ResponseEntity.ok(LoginResponse.builder().token(token).build());
     }

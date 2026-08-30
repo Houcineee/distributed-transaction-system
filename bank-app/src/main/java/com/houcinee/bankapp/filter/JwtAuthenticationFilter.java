@@ -14,6 +14,9 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -40,21 +43,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 			filterChain.doFilter(request, response);
 			return;
 		}
-		jwt = authHeader.substring(7) ;
-		userEmail = jwtService.extractUsername(jwt) ;
-
-
-		if(userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-			var userDetails = userDetailsService.loadUserByUsername(userEmail);
-			if(jwtService.isTokenValid(jwt, userDetails)) {
-				var authToken = new UsernamePasswordAuthenticationToken(
-						userDetails,
-						null,
-						userDetails.getAuthorities()
-				);
-				authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-				SecurityContextHolder.getContext().setAuthentication(authToken);
+		jwt = authHeader.substring(7);
+		
+		try {
+			userEmail = jwtService.extractUsername(jwt);
+			if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+				var userDetails = userDetailsService.loadUserByUsername(userEmail);
+				if (jwtService.isTokenValid(jwt, userDetails)) {
+					log.debug("Authenticated user {} via JWT", userEmail);
+					var authToken = new UsernamePasswordAuthenticationToken(
+							userDetails,
+							null,
+							userDetails.getAuthorities()
+					);
+					authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+					SecurityContextHolder.getContext().setAuthentication(authToken);
+				}
 			}
+		} catch (Exception e) {
+			log.warn("Invalid JWT token detected: {}", e.getMessage());
 		}
 
 		filterChain.doFilter(request, response);
