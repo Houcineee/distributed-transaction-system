@@ -1,7 +1,6 @@
 package com.houcinee.bankapp.filter;
 
 import com.houcinee.bankapp.service.JwtService;
-import io.jsonwebtoken.io.IOException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,6 +14,8 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
 @Slf4j
@@ -32,11 +33,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 			@NonNull HttpServletRequest request,
 			@NonNull HttpServletResponse response,
 			@NonNull FilterChain filterChain
-	) throws ServletException, IOException, java.io.IOException {
+	) throws ServletException, IOException {
 
 		final String authHeader = request.getHeader("Authorization");
 		final String jwt;
-		final String userEmail;
 
 		if(authHeader == null || !authHeader.startsWith("Bearer ")) {
 			filterChain.doFilter(request, response);
@@ -49,10 +49,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 			try {
 				var claims = jwtService.extractAllClaims(jwt) ;
 				log.debug("Authenticated user {} via JWT", claims.getSubject());
-				List<String> roles = (List<String>) claims.get("roles") ;
-				List<SimpleGrantedAuthority> authorities = roles.stream()
-				                                                .map(SimpleGrantedAuthority::new)
-				                                                .toList();
+
+				List<String> roles = (List<String>) claims.get("roles");
+				List<SimpleGrantedAuthority> authorities = (roles != null ? roles : Collections.<String>emptyList())
+						.stream()
+						.map(SimpleGrantedAuthority::new)
+						.toList();
 
 				var authToken = new UsernamePasswordAuthenticationToken(
 						claims.getSubject(),
@@ -69,5 +71,3 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		filterChain.doFilter(request, response);
 	}
 }
-
-

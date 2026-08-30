@@ -65,6 +65,18 @@ public class GlobalExceptionHandlerTest extends BaseWebMvcTest {
                .andExpect(jsonPath("$.correlationId").exists())
                .andExpect(jsonPath("$.timestamp").exists());
     }
+
+    @Test
+    public void givenBadCredentialsException_whenHandle_thenReturns401() throws Exception {
+        mockMvc.perform(get("/test/badCredentials"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.error").value("Unauthorized"))
+                .andExpect(jsonPath("$.message").value("Invalid email or password"))
+                .andExpect(jsonPath("$.path").value("/test/badCredentials"))
+                .andExpect(jsonPath("$.correlationId").exists())
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
 }
 @RestController
 class DummyController{
@@ -83,5 +95,9 @@ class DummyController{
     }
     @PostMapping("/test/validationException")
     public void throwValidationException(@Valid TestDto testDto){}
+    @GetMapping("/test/badCredentials")
+    public void throwBadCredentials(){
+        throw new org.springframework.security.authentication.BadCredentialsException("Bad credentials") ;
+    }
 }
 record TestDto(@NotNull String name){}
