@@ -1,6 +1,5 @@
 package com.houcinee.bankapp.service;
 
-import com.houcinee.bankapp.model.Customer;
 import com.houcinee.bankapp.repository.CustomerRepository;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

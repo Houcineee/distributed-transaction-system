@@ -4,10 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.houcinee.bankapp.dto.RegisterRequest;
 import com.houcinee.bankapp.dto.CustomerResponse;
 import com.houcinee.bankapp.service.AuthService;
+import com.houcinee.bankapp.service.JwtService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -30,6 +32,11 @@ class AuthControllerTest {
 
     @MockitoBean
     private AuthService authService;
+
+    @MockitoBean
+    private AuthenticationManager authenticationManager;
+    @MockitoBean
+    private JwtService jwtService ;
 
     @Test
     void givenValidRequest_whenCreateCustomer_thenReturns201() throws Exception {
