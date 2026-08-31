@@ -1,6 +1,5 @@
 package com.houcinee.bankapp.exception;
 
-
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.junit.jupiter.api.Test;
@@ -15,13 +14,14 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.houcinee.bankapp.controller.BaseWebMvcTest;
+import java.util.UUID;
 
 @WebMvcTest(controllers = DummyController.class)
 public class GlobalExceptionHandlerTest extends BaseWebMvcTest {
 
 	@Test
 	public void givenResourceNotFoundException_whenHandle_thenReturns404() throws Exception {
-		mockMvc.perform(get("/test/notfound"))
+		mockMvc.perform(get("/test/notfound").with(mockAuth(UUID.randomUUID(), "CUSTOMER")))
 		       .andExpect(status().isNotFound())
 		       .andExpect(jsonPath("$.status").value(404))
 		       .andExpect(jsonPath("$.error").value("Not Found"))
@@ -34,7 +34,7 @@ public class GlobalExceptionHandlerTest extends BaseWebMvcTest {
 
 	@Test
 	public void givenIllegalArgumentException_whenHandle_thenReturns400() throws Exception {
-		mockMvc.perform(get("/test/illegalargument"))
+		mockMvc.perform(get("/test/illegalargument").with(mockAuth(UUID.randomUUID(), "CUSTOMER")))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(jsonPath("$.status").value(400))
 		       .andExpect(jsonPath("$.error").value("Bad Request"))
@@ -46,7 +46,7 @@ public class GlobalExceptionHandlerTest extends BaseWebMvcTest {
 
 	@Test
 	public void givenGenericException_whenHandle_thenReturns500() throws Exception {
-		mockMvc.perform(get("/test/globalException"))
+		mockMvc.perform(get("/test/globalException").with(mockAuth(UUID.randomUUID(), "CUSTOMER")))
 		       .andExpect(status().isInternalServerError())
 		       .andExpect(jsonPath("$.status").value(500))
 		       .andExpect(jsonPath("$.error").value("Internal Server Error"))
@@ -58,7 +58,7 @@ public class GlobalExceptionHandlerTest extends BaseWebMvcTest {
 
 	@Test
 	public void givenValidationException_whenHandle_thenReturns400() throws Exception {
-		mockMvc.perform(post("/test/validationException"))
+		mockMvc.perform(post("/test/validationException").with(mockAuth(UUID.randomUUID(), "CUSTOMER")))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(jsonPath("$.status").value(400))
 		       .andExpect(jsonPath("$.error").value("Bad Request"))
@@ -69,7 +69,7 @@ public class GlobalExceptionHandlerTest extends BaseWebMvcTest {
 
 	@Test
 	public void givenBadCredentialsException_whenHandle_thenReturns401() throws Exception {
-		mockMvc.perform(get("/test/badCredentials"))
+		mockMvc.perform(get("/test/badCredentials").with(mockAuth(UUID.randomUUID(), "CUSTOMER")))
 		       .andExpect(status().isUnauthorized())
 		       .andExpect(jsonPath("$.status").value(401))
 		       .andExpect(jsonPath("$.error").value("Unauthorized"))

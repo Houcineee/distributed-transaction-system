@@ -29,14 +29,15 @@ class UserControllerTest extends BaseWebMvcTest {
 		String name = "test";
 		String email = "test@test.com";
 		UserResponse res = UserResponse.builder()
-		                                       .name(name)
-		                                       .email(email)
-		                                       .id(randomId)
-		                                       .build();
+		                               .name(name)
+		                               .email(email)
+		                               .id(randomId)
+		                               .build();
 
 		when(userService.getUserById(randomId)).thenReturn(res);
 
-		mockMvc.perform(get("/api/v1/users/" + randomId).contentType(MediaType.APPLICATION_JSON))
+		mockMvc.perform(get("/api/v1/users/" + randomId).with(mockAuth(randomId, "USER"))
+		                                                .contentType(MediaType.APPLICATION_JSON))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("$.name").value(name))
 		       .andExpect(jsonPath("$.id").value(randomId.toString()));
@@ -46,7 +47,8 @@ class UserControllerTest extends BaseWebMvcTest {
 	void givenInvalidId_whenGetUser_thenReturns400() throws Exception {
 		String randomId = "not-a-valid-id";
 
-		mockMvc.perform(get("/api/v1/users/" + randomId).contentType(MediaType.APPLICATION_JSON))
+		mockMvc.perform(get("/api/v1/users/" + randomId).with(mockAuth(UUID.randomUUID(), "ADMIN"))
+		                                                .contentType(MediaType.APPLICATION_JSON))
 		       .andExpect(status().isBadRequest());
 	}
 }

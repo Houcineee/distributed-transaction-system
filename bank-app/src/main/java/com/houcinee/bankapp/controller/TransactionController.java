@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,7 +22,7 @@ public class TransactionController {
 
 	@PreAuthorize("hasRole('ADMIN') or @securityService.isAccountOwner(authentication, #transactionRequest.srcAccount)")
 	@PostMapping("/api/v1/transfers")
-	public ResponseEntity<TransactionResponse> transferMoney(@RequestBody @Valid TransactionRequest  transactionRequest){
+	public ResponseEntity<TransactionResponse> transferMoney(@RequestBody @Valid @P("transactionRequest") TransactionRequest  transactionRequest){
 		TransactionResponse transaction = transactionService.transferMoney(transactionRequest.getSrcAccount(),
 				transactionRequest.getDestAccount(),
 				transactionRequest.getAmount());

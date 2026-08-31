@@ -11,12 +11,14 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 
 import java.time.Instant;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -49,8 +51,10 @@ class TransactionControllerTest extends BaseWebMvcTest {
                 .build();
 
         when(transactionService.transferMoney(eq(srcAccount), eq(destAccount), eq(5000L))).thenReturn(response);
+        when(securityService.isAccountOwner(any(), eq(srcAccount))).thenReturn(true);
 
         mockMvc.perform(post("/api/v1/transfers")
+                .with(mockAuth(java.util.UUID.randomUUID(), "CUSTOMER"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -60,13 +64,17 @@ class TransactionControllerTest extends BaseWebMvcTest {
 
     @Test
     void givenNegativeAmount_whenTransferMoney_thenReturns400() throws Exception {
+        UUID srcAccount = UUID.randomUUID();
         TransactionRequest request = TransactionRequest.builder()
-                .srcAccount(UUID.randomUUID())
+                .srcAccount(srcAccount)
                 .destAccount(UUID.randomUUID())
                 .amount(-100L)
                 .build();
+        
+        when(securityService.isAccountOwner(any(), eq(srcAccount))).thenReturn(true);
 
         mockMvc.perform(post("/api/v1/transfers")
+                .with(mockAuth(java.util.UUID.randomUUID(), "CUSTOMER"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
