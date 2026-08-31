@@ -1,6 +1,6 @@
 package com.houcinee.bankapp.service;
 
-import com.houcinee.bankapp.model.Customer;
+import com.houcinee.bankapp.model.AppUser;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -27,15 +27,15 @@ public class JwtService {
 	private Long jwtExpiration;
 
 
-	public String generateToken(Customer customer) {
+	public String generateToken(AppUser appUser) {
 		HashMap<String, Object> claims = new HashMap<>();
-		List<String> roles = customer.getAuthorities()
-		                             .stream()
-		                             .map(GrantedAuthority::getAuthority)
-		                             .toList();
+		List<String> roles = appUser.getAuthorities()
+		                            .stream()
+		                            .map(GrantedAuthority::getAuthority)
+		                            .toList();
 		claims.put("roles", roles);
-		claims.put("customerId" , customer.getId()) ;
-		return generateToken(claims, customer);
+		claims.put("userId" , appUser.getId()) ;
+		return generateToken(claims, appUser);
 	}
 
 	private String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {

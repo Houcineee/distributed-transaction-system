@@ -4,8 +4,8 @@ package com.houcinee.bankapp.service;
 import com.houcinee.bankapp.enums.Currency;
 import com.houcinee.bankapp.exception.ResourceNotFoundException;
 import com.houcinee.bankapp.model.Account;
+import com.houcinee.bankapp.model.AppUser;
 import com.houcinee.bankapp.model.Transaction;
-import com.houcinee.bankapp.model.Customer;
 import com.houcinee.bankapp.repository.AccountRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,16 +38,16 @@ public class TransactionServiceTests {
 	private TransactionService transactionService;
 
 	private Account createAccount(long leastSigBits, long balance) {
-		Customer customer = new Customer("Test Customer", "test@bank.com", "password", com.houcinee.bankapp.enums.Role.USER);
-		ReflectionTestUtils.setField(customer, "id", UUID.randomUUID());
+		AppUser appUser = new AppUser("Test AppUser", "test@bank.com", "password", com.houcinee.bankapp.enums.Role.CUSTOMER);
+		ReflectionTestUtils.setField(appUser, "id", UUID.randomUUID());
 
-		Account account = new Account(balance, Currency.MAD, customer);
+		Account account = new Account(balance, Currency.MAD, appUser);
 		ReflectionTestUtils.setField(account, "id", new UUID(0L, leastSigBits));
 		return account;
 	}
 
 	@Test
-	void givenValidAccounts_whenTransferFunds_thenSuccessfulAndLogged() {
+	void givenValidAccounts_whenTransferFunds_thenCompletesAndLogsTransaction() {
 		Account srcAccount = createAccount(1L, 100L);
 		Account destAccount = createAccount(2L, 50L);
 
@@ -105,7 +105,7 @@ public class TransactionServiceTests {
 	}
 
 	@Test
-	void givenInsufficientFunds_whenTransferFunds_thenThrowsExceptionAndLogsFailed() {
+	void givenInsufficientFunds_whenTransferFunds_thenThrowsIllegalArgumentExceptionAndLogsFailure() {
 		Account srcAccount = createAccount(1L, 5L);
 		Account destAccount = createAccount(2L, 50L);
 

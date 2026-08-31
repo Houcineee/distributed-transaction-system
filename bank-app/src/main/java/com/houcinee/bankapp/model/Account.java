@@ -3,8 +3,6 @@ package com.houcinee.bankapp.model;
 import com.houcinee.bankapp.enums.Currency;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.UuidGenerator;
@@ -32,8 +30,8 @@ public class Account extends BaseEntity {
 	private Currency currency;
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "customer_id", nullable = false)
-	Customer customer;
+	@JoinColumn(name = "user_id", nullable = false)
+	AppUser appUser;
 
 	@OneToMany(mappedBy = "sourceAccount")
 	private List<Transaction> sourceTransactions;
@@ -41,10 +39,10 @@ public class Account extends BaseEntity {
 	@OneToMany(mappedBy = "destAccount")
 	private List<Transaction> destinationTransactions;
 
-	public Account(Long balance, Currency currency, Customer customer) {
+	public Account(Long balance, Currency currency, AppUser appUser) {
 		this.balance = balance;
 		this.currency = currency;
-		this.customer = customer;
+		this.appUser = appUser;
 	}
 
 	public void debit(Long amount) {

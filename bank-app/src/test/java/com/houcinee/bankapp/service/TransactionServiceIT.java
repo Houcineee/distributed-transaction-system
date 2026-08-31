@@ -3,9 +3,9 @@ package com.houcinee.bankapp.service;
 
 import com.houcinee.bankapp.enums.Currency;
 import com.houcinee.bankapp.model.Account;
-import com.houcinee.bankapp.model.Customer;
+import com.houcinee.bankapp.model.AppUser;
 import com.houcinee.bankapp.repository.AccountRepository;
-import com.houcinee.bankapp.repository.CustomerRepository;
+import com.houcinee.bankapp.repository.UserRepository;
 import com.houcinee.bankapp.repository.TransactionRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,7 +25,7 @@ public class TransactionServiceIT extends BaseIntegrationTest {
 	@Autowired
 	AccountRepository accountRepository;
 	@Autowired
-	CustomerRepository customerRepository;
+	UserRepository userRepository;
 	@Autowired
 	TransactionRepository transactionRepository;
 
@@ -34,11 +34,11 @@ public class TransactionServiceIT extends BaseIntegrationTest {
 
 	@BeforeEach
 	void setUp() {
-		Customer customerA = customerRepository.save(new Customer("Customer A", "customer-a-" + UUID.randomUUID() + "@bank.com", "password", com.houcinee.bankapp.enums.Role.USER));
-		Customer customerB = customerRepository.save(new Customer("Customer B", "customer-b-" + UUID.randomUUID() + "@bank.com", "password", com.houcinee.bankapp.enums.Role.USER));
+		AppUser appUserA = userRepository.save(new AppUser("AppUser A", "user-a-" + UUID.randomUUID() + "@bank.com", "password", com.houcinee.bankapp.enums.Role.CUSTOMER));
+		AppUser appUserB = userRepository.save(new AppUser("AppUser B", "user-b-" + UUID.randomUUID() + "@bank.com", "password", com.houcinee.bankapp.enums.Role.CUSTOMER));
 
-		Account src = accountRepository.save(new Account(1000L, Currency.MAD, customerA));
-		Account dest = accountRepository.save(new Account(1000L, Currency.MAD, customerB));
+		Account src = accountRepository.save(new Account(1000L, Currency.MAD, appUserA));
+		Account dest = accountRepository.save(new Account(1000L, Currency.MAD, appUserB));
 
 		srcAccountId = src.getId();
 		destAccountId = dest.getId();
@@ -48,11 +48,11 @@ public class TransactionServiceIT extends BaseIntegrationTest {
 	void tearDown() {
 		transactionRepository.deleteAllInBatch();
 		accountRepository.deleteAllInBatch();
-		customerRepository.deleteAllInBatch();
+		userRepository.deleteAllInBatch();
 	}
 
 	@Test
-	void testConcurrentTransfersPreserveBalance() throws InterruptedException {
+	void givenConcurrentTransfers_whenExecuted_thenPreservesTotalBalance() throws InterruptedException {
 		int threadCount = 50;
 		ExecutorService executor = Executors.newFixedThreadPool(threadCount);
 		CountDownLatch gateLatch = new CountDownLatch(1);

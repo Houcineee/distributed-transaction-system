@@ -1,10 +1,10 @@
 package com.houcinee.bankapp.controller;
 
-import com.houcinee.bankapp.dto.CustomerResponse;
+import com.houcinee.bankapp.dto.UserResponse;
 import com.houcinee.bankapp.dto.LoginRequest;
 import com.houcinee.bankapp.dto.LoginResponse;
 import com.houcinee.bankapp.dto.RegisterRequest;
-import com.houcinee.bankapp.model.Customer;
+import com.houcinee.bankapp.model.AppUser;
 import com.houcinee.bankapp.service.AuthService;
 import com.houcinee.bankapp.service.JwtService;
 import jakarta.validation.Valid;
@@ -26,25 +26,23 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthService authService;
-    private final AuthenticationManager authenticationManager;
-    private final JwtService jwtService;
+	private final AuthService authService;
+	private final AuthenticationManager authenticationManager;
+	private final JwtService jwtService;
 
-    @PostMapping("/register")
-    public ResponseEntity<CustomerResponse> register(@Valid @RequestBody RegisterRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(authService.register(request));
-    }
+	@PostMapping("/register")
+	public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
+		return ResponseEntity.status(HttpStatus.CREATED)
+		                     .body(authService.register(request));
+	}
 
-    @PostMapping("/login")
-    public  ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request){
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
-                        request.getPassword()
-                )
-        );
-        log.info("User {} successfully logged in", request.getEmail());
-        String token = jwtService.generateToken((Customer) authentication.getPrincipal());
-        return ResponseEntity.ok(LoginResponse.builder().token(token).build());
-    }
+	@PostMapping("/login")
+	public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+		Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+		log.info("User {} successfully logged in", request.getEmail());
+		String token = jwtService.generateToken((AppUser) authentication.getPrincipal());
+		return ResponseEntity.ok(LoginResponse.builder()
+		                                      .token(token)
+		                                      .build());
+	}
 }

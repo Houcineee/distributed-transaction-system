@@ -42,7 +42,7 @@ class AccountControllerTest extends BaseWebMvcTest {
 	@Test
 	void givenValidRequest_whenCreateAccount_thenReturns201() throws Exception {
 		CreateAccountRequest request = CreateAccountRequest.builder()
-		                                                   .customerId(UUID.randomUUID())
+		                                                   .userId(UUID.randomUUID())
 		                                                   .currency(Currency.MAD)
 		                                                   .build();
 
@@ -50,7 +50,7 @@ class AccountControllerTest extends BaseWebMvcTest {
 		                                          .id(UUID.randomUUID())
 		                                          .balance("0.00")
 		                                          .currency(Currency.MAD)
-		                                          .customerId(request.getCustomerId())
+		                                          .userId(request.getUserId())
 		                                          .build();
 
 		when(accountService.createAccount(any(CreateAccountRequest.class))).thenReturn(response);
@@ -64,7 +64,7 @@ class AccountControllerTest extends BaseWebMvcTest {
 
 	@Test
 	void givenInvalidRequest_whenCreateAccount_thenReturns400() throws Exception {
-		// Missing customerId and currency
+		// Missing userId and currency
 		CreateAccountRequest request = CreateAccountRequest.builder()
 		                                                   .build();
 
@@ -80,7 +80,7 @@ class AccountControllerTest extends BaseWebMvcTest {
 		                                          .id(accountId)
 		                                          .balance("150.00")
 		                                          .currency(Currency.USD)
-		                                          .customerId(UUID.randomUUID())
+		                                          .userId(UUID.randomUUID())
 		                                          .build();
 
 		when(accountService.getAccountById(accountId)).thenReturn(response);

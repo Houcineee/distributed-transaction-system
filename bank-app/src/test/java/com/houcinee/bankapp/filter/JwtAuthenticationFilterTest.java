@@ -53,7 +53,7 @@ class JwtAuthenticationFilterTest {
 	}
 
 	@Test
-	void shouldPassThroughWhenNoAuthorizationHeader() throws ServletException, IOException {
+	void givenNoAuthorizationHeader_whenFilter_thenPassesThrough() throws ServletException, IOException {
 		// No Authorization header set
 
 		jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
@@ -65,7 +65,7 @@ class JwtAuthenticationFilterTest {
 	}
 
 	@Test
-	void shouldPassThroughWhenAuthorizationHeaderIsNotBearer() throws ServletException, IOException {
+	void givenNonBearerAuthorizationHeader_whenFilter_thenPassesThrough() throws ServletException, IOException {
 		request.addHeader("Authorization", "Basic some-credentials");
 
 		jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
@@ -77,11 +77,11 @@ class JwtAuthenticationFilterTest {
 	}
 
 	@Test
-	void shouldAuthenticateUserWithValidToken() throws ServletException, IOException {
+	void givenValidToken_whenFilter_thenAuthenticatesUser() throws ServletException, IOException {
 		String token = "valid.jwt.token";
 		request.addHeader("Authorization", "Bearer " + token);
 
-		Claims claims = new DefaultClaims(Map.of("sub", "alice@bank.com", "customerId", "550e8400-e29b-41d4-a716-446655440000", "roles", List.of("ROLE_USER")));
+		Claims claims = new DefaultClaims(Map.of("sub", "alice@bank.com", "userId", "550e8400-e29b-41d4-a716-446655440000", "roles", List.of("ROLE_CUSTOMER")));
 
 		when(jwtService.extractAllClaims(token)).thenReturn(claims);
 
@@ -94,7 +94,7 @@ class JwtAuthenticationFilterTest {
 		assertEquals(java.util.UUID.fromString("550e8400-e29b-41d4-a716-446655440000"), authentication.getPrincipal());
 		assertEquals(1, authentication.getAuthorities()
 		                              .size());
-		assertEquals("ROLE_USER", authentication.getAuthorities()
+		assertEquals("ROLE_CUSTOMER", authentication.getAuthorities()
 		                                        .iterator()
 		                                        .next()
 		                                        .getAuthority());
@@ -102,11 +102,11 @@ class JwtAuthenticationFilterTest {
 	}
 
 	@Test
-	void shouldPopulateMultipleRoles() throws ServletException, IOException {
+	void givenTokenWithMultipleRoles_whenFilter_thenAssignsAllRoles() throws ServletException, IOException {
 		String token = "valid.jwt.token";
 		request.addHeader("Authorization", "Bearer " + token);
 
-		Claims claims = new DefaultClaims(Map.of("sub", "admin@bank.com", "customerId", "550e8400-e29b-41d4-a716-446655440000", "roles", List.of("ROLE_USER", "ROLE_ADMIN")));
+		Claims claims = new DefaultClaims(Map.of("sub", "admin@bank.com", "userId", "550e8400-e29b-41d4-a716-446655440000", "roles", List.of("ROLE_CUSTOMER", "ROLE_ADMIN")));
 
 		when(jwtService.extractAllClaims(token)).thenReturn(claims);
 
@@ -122,13 +122,13 @@ class JwtAuthenticationFilterTest {
 		                                   .stream()
 		                                   .map(Object::toString)
 		                                   .toList();
-		assertTrue(authorityNames.contains("ROLE_USER"));
+		assertTrue(authorityNames.contains("ROLE_CUSTOMER"));
 		assertTrue(authorityNames.contains("ROLE_ADMIN"));
 		verify(filterChain).doFilter(request, response);
 	}
 
 	@Test
-	void shouldNotAuthenticateWhenTokenIsExpired() throws ServletException, IOException {
+	void givenExpiredToken_whenFilter_thenDoesNotAuthenticate() throws ServletException, IOException {
 		String token = "expired.jwt.token";
 		request.addHeader("Authorization", "Bearer " + token);
 
@@ -142,7 +142,7 @@ class JwtAuthenticationFilterTest {
 	}
 
 	@Test
-	void shouldNotAuthenticateWhenTokenIsTampered() throws ServletException, IOException {
+	void givenTamperedToken_whenFilter_thenDoesNotAuthenticate() throws ServletException, IOException {
 		String token = "tampered.jwt.token";
 		request.addHeader("Authorization", "Bearer " + token);
 
@@ -156,12 +156,12 @@ class JwtAuthenticationFilterTest {
 	}
 
 	@Test
-	void shouldHandleTokenWithoutRolesClaim() throws ServletException, IOException {
+	void givenTokenWithoutRolesClaim_whenFilter_thenAuthenticatesWithoutAuthorities() throws ServletException, IOException {
 		String token = "no.roles.token";
 		request.addHeader("Authorization", "Bearer " + token);
 
 		// Token has a subject but no roles claim
-		Claims claims = new DefaultClaims(Map.of("sub", "legacy@bank.com", "customerId", "550e8400-e29b-41d4-a716-446655440000"));
+		Claims claims = new DefaultClaims(Map.of("sub", "legacy@bank.com", "userId", "550e8400-e29b-41d4-a716-446655440000"));
 
 		when(jwtService.extractAllClaims(token)).thenReturn(claims);
 

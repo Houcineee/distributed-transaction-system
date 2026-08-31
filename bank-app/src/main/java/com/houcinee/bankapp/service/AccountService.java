@@ -5,13 +5,12 @@ import com.houcinee.bankapp.dto.CreateAccountRequest;
 import com.houcinee.bankapp.exception.ResourceNotFoundException;
 import com.houcinee.bankapp.helpers.MoneyUtil;
 import com.houcinee.bankapp.model.Account;
-import com.houcinee.bankapp.model.Customer;
+import com.houcinee.bankapp.model.AppUser;
 import com.houcinee.bankapp.repository.AccountRepository;
-import com.houcinee.bankapp.repository.CustomerRepository;
+import com.houcinee.bankapp.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,23 +18,23 @@ import java.util.UUID;
 @Slf4j
 public class AccountService {
 	private final AccountRepository accountRepository ;
-	private final CustomerRepository customerRepository ;
+	private final UserRepository userRepository;
 
-	public AccountService(AccountRepository accountRepository , CustomerRepository customerRepository ){
+	public AccountService(AccountRepository accountRepository , UserRepository userRepository){
 		this.accountRepository = accountRepository ;
-		this.customerRepository = customerRepository ;
+		this.userRepository = userRepository;
 	}
 
 
 	public AccountResponse createAccount(CreateAccountRequest req) {
-		log.info("Creating account for customer: {}", req.getCustomerId());
+		log.info("Creating account for user: {}", req.getUserId());
 
-		Customer customer = customerRepository.findById(req.getCustomerId())
-		                                      .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + req.getCustomerId()));
-		Account account = new Account(0L ,req.getCurrency() , customer );
+		AppUser appUser = userRepository.findById(req.getUserId())
+		                                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + req.getUserId()));
+		Account account = new Account(0L ,req.getCurrency() , appUser);
 		accountRepository.save(account) ;
 
-		log.info("Successfully created account {} for customer {}", account.getId(), customer.getId());
+		log.info("Successfully created account {} for appUser {}", account.getId(), appUser.getId());
 		return toAccountResponse(account);
 	}
 
@@ -48,12 +47,12 @@ public class AccountService {
 	}
 
 
-	public List<AccountResponse> getAccountsByCustomerId(UUID id){
-		log.info("Fetching all accounts for customer id: {}", id);
-		if(!customerRepository.existsById(id)){
-			throw new ResourceNotFoundException("Customer not found with id: " + id) ;
+	public List<AccountResponse> getAccountsByUserId(UUID id){
+		log.info("Fetching all accounts for user id: {}", id);
+		if(!userRepository.existsById(id)){
+			throw new ResourceNotFoundException("User not found with id: " + id) ;
 		}
-		List<Account> accountsList = accountRepository.findAllByCustomerId(id) ;
+		List<Account> accountsList = accountRepository.findAllByAppUserId(id) ;
 		return accountsList.stream()
 		                   .map(this::toAccountResponse)
 		                   .toList() ;
@@ -66,7 +65,7 @@ public class AccountService {
 		                      .id(account.getId())
 		                      .balance(MoneyUtil.formatCents(account.getBalance()))
 		                      .currency(account.getCurrency())
-		                      .customerId(account.getCustomer().getId())
+		                      .userId(account.getAppUser().getId())
 		                      .build();
 	}
 

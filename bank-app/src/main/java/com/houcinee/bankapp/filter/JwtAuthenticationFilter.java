@@ -53,8 +53,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 				                                                                                                    .map(SimpleGrantedAuthority::new)
 				                                                                                                    .toList();
 
-				UUID customerId = UUID.fromString((String) claims.get("customerId"));
-				var authToken = new UsernamePasswordAuthenticationToken(customerId, null, authorities);
+				UUID userId = UUID.fromString((String) claims.get("userId"));
+				var authToken = new UsernamePasswordAuthenticationToken(userId, null, authorities);
 				authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 				SecurityContextHolder.getContext()
 				                     .setAuthentication(authToken);

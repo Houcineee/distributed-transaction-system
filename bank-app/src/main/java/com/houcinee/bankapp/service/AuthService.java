@@ -1,6 +1,6 @@
 package com.houcinee.bankapp.service;
 
-import com.houcinee.bankapp.dto.CustomerResponse;
+import com.houcinee.bankapp.dto.UserResponse;
 import com.houcinee.bankapp.dto.RegisterRequest;
 import com.houcinee.bankapp.enums.Role;
 import lombok.RequiredArgsConstructor;
@@ -13,12 +13,12 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class AuthService {
 
-    private final CustomerService customerService;
+    private final UserService userService;
     private final PasswordEncoder passwordEncoder;
 
-    public CustomerResponse register(RegisterRequest req) {
-        log.info("Registering new customer with email: {}", req.getEmail());
+    public UserResponse register(RegisterRequest req) {
+        log.info("Registering new user with email: {}", req.getEmail());
         String hashedPassword = passwordEncoder.encode(req.getPassword());
-        return customerService.createCustomer(req.getName(), req.getEmail(), hashedPassword, Role.USER);
+        return userService.createUser(req.getName(), req.getEmail(), hashedPassword, Role.CUSTOMER);
     }
 }

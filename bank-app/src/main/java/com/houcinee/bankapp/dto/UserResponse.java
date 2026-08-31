@@ -7,7 +7,7 @@ import java.util.UUID;
 
 @Builder
 @Getter
-public class CustomerResponse {
+public class UserResponse {
 	private UUID id;
 	private String name ;
 	private String email;

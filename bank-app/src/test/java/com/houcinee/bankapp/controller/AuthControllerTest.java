@@ -2,7 +2,7 @@ package com.houcinee.bankapp.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.houcinee.bankapp.dto.RegisterRequest;
-import com.houcinee.bankapp.dto.CustomerResponse;
+import com.houcinee.bankapp.dto.UserResponse;
 import com.houcinee.bankapp.service.AuthService;
 import com.houcinee.bankapp.service.JwtService;
 import org.junit.jupiter.api.Test;
@@ -32,14 +32,14 @@ class AuthControllerTest extends BaseWebMvcTest {
 	private AuthenticationManager authenticationManager;
 
 	@Test
-	void givenValidRequest_whenCreateCustomer_thenReturns201() throws Exception {
+	void givenValidRegistrationRequest_whenRegister_thenReturns201() throws Exception {
 		RegisterRequest request = RegisterRequest.builder()
 		                                         .name("Houcine")
 		                                         .email("houcine@test.com")
 		                                         .password("secure123")
 		                                         .build();
 
-		CustomerResponse response = CustomerResponse.builder()
+		UserResponse response = UserResponse.builder()
 		                                            .id(UUID.randomUUID())
 		                                            .name("Houcine")
 		                                            .email("houcine@test.com")
@@ -56,7 +56,7 @@ class AuthControllerTest extends BaseWebMvcTest {
 	}
 
 	@Test
-	void givenInvalidRequest_whenCreateCustomer_thenReturns400() throws Exception {
+	void givenInvalidRegistrationRequest_whenRegister_thenReturns400() throws Exception {
 		RegisterRequest request = RegisterRequest.builder()
 		                                         .name("")
 		                                         .email("not-an-email")

@@ -4,9 +4,9 @@ package com.houcinee.bankapp.service;
 import com.houcinee.bankapp.dto.AccountResponse;
 import com.houcinee.bankapp.dto.CreateAccountRequest;
 import com.houcinee.bankapp.enums.Currency;
-import com.houcinee.bankapp.model.Customer;
+import com.houcinee.bankapp.model.AppUser;
 import com.houcinee.bankapp.repository.AccountRepository;
-import com.houcinee.bankapp.repository.CustomerRepository;
+import com.houcinee.bankapp.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -30,35 +30,35 @@ public class AccountServiceTests {
 	@Mock
 	private AccountRepository accountRepository ;
 	@Mock
-	private CustomerRepository customerRepository ;
+	private UserRepository userRepository;
 	@InjectMocks
 	private AccountService accountService  ;
 
 
 	@Test
-	public void givenValidData_whenCreateAccount_thenReturnAccountResponse() {
-		Customer customer = new Customer("test" , "test@test.com", "password", com.houcinee.bankapp.enums.Role.USER) ;
-		ReflectionTestUtils.setField(customer, "id", UUID.randomUUID());
+	public void givenValidData_whenCreateAccount_thenReturnsAccountResponse() {
+		AppUser appUser = new AppUser("test" , "test@test.com", "password", com.houcinee.bankapp.enums.Role.CUSTOMER) ;
+		ReflectionTestUtils.setField(appUser, "id", UUID.randomUUID());
 		CreateAccountRequest accountRequest =  CreateAccountRequest.builder()
-		                                                           .customerId(customer.getId()).currency(Currency.MAD)
+		                                                           .userId(appUser.getId()).currency(Currency.MAD)
 		                                                           .build();
 
-		when(customerRepository.findById(customer.getId())).thenReturn(Optional.of(customer)) ;
+		when(userRepository.findById(appUser.getId())).thenReturn(Optional.of(appUser)) ;
 
 		AccountResponse accountResponse = accountService.createAccount(accountRequest) ;
 
 
 		assertEquals("0.00" , accountResponse.getBalance()) ;
-		assertEquals(customer.getId() , accountResponse.getCustomerId() ) ;
+		assertEquals(appUser.getId() , accountResponse.getUserId() ) ;
 	}
 
 	@Test
-	public void givenInvalidCustomerId_whenCreateAccount_thenThrowsResourceNotFoundException() {
+	public void givenInvalidUserId_whenCreateAccount_thenThrowsResourceNotFoundException() {
 		CreateAccountRequest accountRequest = CreateAccountRequest.builder()
-				.customerId(UUID.randomUUID()).currency(Currency.MAD)
+				.userId(UUID.randomUUID()).currency(Currency.MAD)
 				.build();
 
-		when(customerRepository.findById(accountRequest.getCustomerId())).thenReturn(Optional.empty());
+		when(userRepository.findById(accountRequest.getUserId())).thenReturn(Optional.empty());
 
 		assertThrows(ResourceNotFoundException.class, () -> {
 			accountService.createAccount(accountRequest);
@@ -66,11 +66,11 @@ public class AccountServiceTests {
 	}
 
 	@Test
-	public void givenValidId_whenGetAccountById_thenReturnAccountResponse() {
-		Customer customer = new Customer("test", "test@test.com", "password", com.houcinee.bankapp.enums.Role.USER);
-		ReflectionTestUtils.setField(customer, "id", UUID.randomUUID());
+	public void givenValidId_whenGetAccountById_thenReturnsAccountResponse() {
+		AppUser appUser = new AppUser("test", "test@test.com", "password", com.houcinee.bankapp.enums.Role.CUSTOMER);
+		ReflectionTestUtils.setField(appUser, "id", UUID.randomUUID());
 		
-		Account account = new Account(15000L, Currency.MAD, customer);
+		Account account = new Account(15000L, Currency.MAD, appUser);
 		ReflectionTestUtils.setField(account, "id", UUID.randomUUID());
 
 		when(accountRepository.findById(account.getId())).thenReturn(Optional.of(account));
@@ -92,30 +92,30 @@ public class AccountServiceTests {
 	}
 
 	@Test
-	public void givenValidCustomerId_whenGetAccountsByCustomerId_thenReturnList() {
-		UUID customerId = UUID.randomUUID();
-		Customer customer = new Customer("test", "test@test.com", "password", com.houcinee.bankapp.enums.Role.USER);
-		ReflectionTestUtils.setField(customer, "id", customerId);
+	public void givenValidUserId_whenGetAccountsByUserId_thenReturnsAccountList() {
+		UUID userId = UUID.randomUUID();
+		AppUser appUser = new AppUser("test", "test@test.com", "password", com.houcinee.bankapp.enums.Role.CUSTOMER);
+		ReflectionTestUtils.setField(appUser, "id", userId);
 		
-		Account account = new Account(1000L, Currency.MAD, customer);
+		Account account = new Account(1000L, Currency.MAD, appUser);
 		ReflectionTestUtils.setField(account, "id", UUID.randomUUID());
 
-		when(customerRepository.existsById(customerId)).thenReturn(true);
-		when(accountRepository.findAllByCustomerId(customerId)).thenReturn(List.of(account));
+		when(userRepository.existsById(userId)).thenReturn(true);
+		when(accountRepository.findAllByAppUserId(userId)).thenReturn(List.of(account));
 
-		var responses = accountService.getAccountsByCustomerId(customerId);
+		var responses = accountService.getAccountsByUserId(userId);
 
 		assertEquals(1, responses.size());
 		assertEquals("10.00", responses.getFirst().getBalance());
 	}
 
 	@Test
-	public void givenInvalidCustomerId_whenGetAccountsByCustomerId_thenThrowsResourceNotFoundException() {
+	public void givenInvalidUserId_whenGetAccountsByUserId_thenThrowsResourceNotFoundException() {
 		UUID id = UUID.randomUUID();
-		when(customerRepository.existsById(id)).thenReturn(false);
+		when(userRepository.existsById(id)).thenReturn(false);
 
 		assertThrows(ResourceNotFoundException.class, () -> {
-			accountService.getAccountsByCustomerId(id);
+			accountService.getAccountsByUserId(id);
 		});
 	}
 }

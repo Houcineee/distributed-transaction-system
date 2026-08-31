@@ -1,7 +1,6 @@
 package com.houcinee.bankapp.repository;
 
 import com.houcinee.bankapp.model.Account;
-import com.houcinee.bankapp.model.Customer;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -17,7 +16,7 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	Optional<Account> findAccountById(UUID id);
 
-	List<Account> findAllByCustomerId(UUID customerId);
+	List<Account> findAllByAppUserId(UUID id);
 
 
 }

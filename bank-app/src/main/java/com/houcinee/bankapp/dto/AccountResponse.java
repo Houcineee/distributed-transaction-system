@@ -13,5 +13,5 @@ public class AccountResponse {
 	private UUID id;
 	private String balance;
 	private Currency currency;
-	private UUID customerId;
+	private UUID userId;
 }

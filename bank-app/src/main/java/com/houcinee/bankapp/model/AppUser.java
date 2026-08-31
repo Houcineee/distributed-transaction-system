@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
-import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,8 +17,8 @@ import java.util.UUID;
 @Entity
 @NoArgsConstructor
 @Getter
-@Table(name = "customers")
-public class Customer extends BaseEntity implements UserDetails {
+@Table(name = "users")
+public class AppUser extends BaseEntity implements UserDetails {
 	@Id
 	@GeneratedValue
 	@UuidGenerator(style = UuidGenerator.Style.VERSION_7)
@@ -55,10 +54,10 @@ public class Customer extends BaseEntity implements UserDetails {
 	private boolean enabled = true;
 
 
-	@OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToMany(mappedBy = "appUser", cascade = CascadeType.ALL, orphanRemoval = true)
 	List<Account> accounts;
 
-	public Customer(String name, String email, String password, Role role) {
+	public AppUser(String name, String email, String password, Role role) {
 		this.name = name;
 		this.email = email;
 		this.password = password;
