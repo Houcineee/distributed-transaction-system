@@ -10,6 +10,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import com.houcinee.bankapp.model.Customer;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
@@ -24,7 +25,7 @@ class JwtServiceTest {
     private JwtService jwtService;
 
     @Mock
-    private UserDetails userDetails;
+    private Customer customer;
 
     private final String testSecretKey = "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970";
 
@@ -37,15 +38,17 @@ class JwtServiceTest {
 
     @Test
     void shouldGenerateAndExtractClaimsSuccessfully() {
-        when(userDetails.getUsername()).thenReturn("test@bank.com");
-        doReturn(List.of(new SimpleGrantedAuthority("ROLE_USER"))).when(userDetails).getAuthorities();
+        when(customer.getUsername()).thenReturn("test@bank.com");
+        when(customer.getId()).thenReturn(java.util.UUID.fromString("550e8400-e29b-41d4-a716-446655440000"));
+        doReturn(List.of(new SimpleGrantedAuthority("ROLE_USER"))).when(customer).getAuthorities();
 
-        String token = jwtService.generateToken(userDetails);
+        String token = jwtService.generateToken(customer);
 
         assertNotNull(token);
         Claims claims = jwtService.extractAllClaims(token);
         
         assertEquals("test@bank.com", claims.getSubject());
+        assertEquals("550e8400-e29b-41d4-a716-446655440000", claims.get("customerId", String.class));
         
         List<String> roles = claims.get("roles", List.class);
         assertNotNull(roles);
@@ -54,9 +57,10 @@ class JwtServiceTest {
 
     @Test
     void shouldThrowExceptionWhenTokenIsTampered() {
-        when(userDetails.getUsername()).thenReturn("test@bank.com");
-        doReturn(List.of(new SimpleGrantedAuthority("ROLE_USER"))).when(userDetails).getAuthorities();
-        String validToken = jwtService.generateToken(userDetails);
+        when(customer.getUsername()).thenReturn("test@bank.com");
+        when(customer.getId()).thenReturn(java.util.UUID.fromString("550e8400-e29b-41d4-a716-446655440000"));
+        doReturn(List.of(new SimpleGrantedAuthority("ROLE_USER"))).when(customer).getAuthorities();
+        String validToken = jwtService.generateToken(customer);
 
         // Hacker intercepts and changes the last character
         String tamperedToken = validToken.substring(0, validToken.length() - 1) + "A";
@@ -68,13 +72,14 @@ class JwtServiceTest {
 
     @Test
     void shouldThrowExceptionWhenTokenIsExpired() {
-        when(userDetails.getUsername()).thenReturn("test@bank.com");
-        doReturn(List.of(new SimpleGrantedAuthority("ROLE_USER"))).when(userDetails).getAuthorities();
+        when(customer.getUsername()).thenReturn("test@bank.com");
+        when(customer.getId()).thenReturn(java.util.UUID.fromString("550e8400-e29b-41d4-a716-446655440000"));
+        doReturn(List.of(new SimpleGrantedAuthority("ROLE_USER"))).when(customer).getAuthorities();
 
         // Set expiration to 1 second in the past (-1000 ms)
         ReflectionTestUtils.setField(jwtService, "jwtExpiration", -1000L);
 
-        String expiredToken = jwtService.generateToken(userDetails);
+        String expiredToken = jwtService.generateToken(customer);
 
         assertThrows(ExpiredJwtException.class, () -> {
             jwtService.extractAllClaims(expiredToken);

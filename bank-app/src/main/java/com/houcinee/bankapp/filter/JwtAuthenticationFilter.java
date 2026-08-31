@@ -17,6 +17,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -52,7 +53,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 				                                                                                                    .map(SimpleGrantedAuthority::new)
 				                                                                                                    .toList();
 
-				var authToken = new UsernamePasswordAuthenticationToken(claims.getSubject(), null, authorities);
+				UUID customerId = UUID.fromString((String) claims.get("customerId"));
+				var authToken = new UsernamePasswordAuthenticationToken(customerId, null, authorities);
 				authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 				SecurityContextHolder.getContext()
 				                     .setAuthentication(authToken);

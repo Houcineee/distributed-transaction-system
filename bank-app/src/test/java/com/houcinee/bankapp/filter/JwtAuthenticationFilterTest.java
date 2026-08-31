@@ -81,7 +81,7 @@ class JwtAuthenticationFilterTest {
 		String token = "valid.jwt.token";
 		request.addHeader("Authorization", "Bearer " + token);
 
-		Claims claims = new DefaultClaims(Map.of("sub", "alice@bank.com", "roles", List.of("ROLE_USER")));
+		Claims claims = new DefaultClaims(Map.of("sub", "alice@bank.com", "customerId", "550e8400-e29b-41d4-a716-446655440000", "roles", List.of("ROLE_USER")));
 
 		when(jwtService.extractAllClaims(token)).thenReturn(claims);
 
@@ -91,7 +91,7 @@ class JwtAuthenticationFilterTest {
 		                                          .getAuthentication();
 		assertNotNull(authentication);
 		assertTrue(authentication.isAuthenticated());
-		assertEquals("alice@bank.com", authentication.getPrincipal());
+		assertEquals(java.util.UUID.fromString("550e8400-e29b-41d4-a716-446655440000"), authentication.getPrincipal());
 		assertEquals(1, authentication.getAuthorities()
 		                              .size());
 		assertEquals("ROLE_USER", authentication.getAuthorities()
@@ -106,7 +106,7 @@ class JwtAuthenticationFilterTest {
 		String token = "valid.jwt.token";
 		request.addHeader("Authorization", "Bearer " + token);
 
-		Claims claims = new DefaultClaims(Map.of("sub", "admin@bank.com", "roles", List.of("ROLE_USER", "ROLE_ADMIN")));
+		Claims claims = new DefaultClaims(Map.of("sub", "admin@bank.com", "customerId", "550e8400-e29b-41d4-a716-446655440000", "roles", List.of("ROLE_USER", "ROLE_ADMIN")));
 
 		when(jwtService.extractAllClaims(token)).thenReturn(claims);
 
@@ -115,6 +115,7 @@ class JwtAuthenticationFilterTest {
 		var authentication = SecurityContextHolder.getContext()
 		                                          .getAuthentication();
 		assertNotNull(authentication);
+		assertEquals(java.util.UUID.fromString("550e8400-e29b-41d4-a716-446655440000"), authentication.getPrincipal());
 		assertEquals(2, authentication.getAuthorities()
 		                              .size());
 		var authorityNames = authentication.getAuthorities()
@@ -160,7 +161,7 @@ class JwtAuthenticationFilterTest {
 		request.addHeader("Authorization", "Bearer " + token);
 
 		// Token has a subject but no roles claim
-		Claims claims = new DefaultClaims(Map.of("sub", "legacy@bank.com"));
+		Claims claims = new DefaultClaims(Map.of("sub", "legacy@bank.com", "customerId", "550e8400-e29b-41d4-a716-446655440000"));
 
 		when(jwtService.extractAllClaims(token)).thenReturn(claims);
 
@@ -169,7 +170,7 @@ class JwtAuthenticationFilterTest {
 		var authentication = SecurityContextHolder.getContext()
 		                                          .getAuthentication();
 		assertNotNull(authentication);
-		assertEquals("legacy@bank.com", authentication.getPrincipal());
+		assertEquals(java.util.UUID.fromString("550e8400-e29b-41d4-a716-446655440000"), authentication.getPrincipal());
 		assertTrue(authentication.getAuthorities()
 		                         .isEmpty());
 		verify(filterChain).doFilter(request, response);

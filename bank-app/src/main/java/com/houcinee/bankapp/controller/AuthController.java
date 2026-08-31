@@ -1,22 +1,24 @@
 package com.houcinee.bankapp.controller;
 
+import com.houcinee.bankapp.dto.CustomerResponse;
 import com.houcinee.bankapp.dto.LoginRequest;
 import com.houcinee.bankapp.dto.LoginResponse;
 import com.houcinee.bankapp.dto.RegisterRequest;
-import com.houcinee.bankapp.dto.CustomerResponse;
+import com.houcinee.bankapp.model.Customer;
 import com.houcinee.bankapp.service.AuthService;
 import com.houcinee.bankapp.service.JwtService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.*;
-
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
 @RestController
@@ -42,7 +44,7 @@ public class AuthController {
                 )
         );
         log.info("User {} successfully logged in", request.getEmail());
-        String token = jwtService.generateToken((UserDetails) authentication.getPrincipal());
+        String token = jwtService.generateToken((Customer) authentication.getPrincipal());
         return ResponseEntity.ok(LoginResponse.builder().token(token).build());
     }
 }
