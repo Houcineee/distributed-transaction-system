@@ -62,43 +62,46 @@ public class BankApiIT extends BaseIntegrationTest {
 		String userBId = createUser("Bob", "bob@bank.com");
 
 		// 3. Login to get token (using AppUser A's credentials)
-		String token = login("alice@bank.com", "secure123");
+		String tokenA = login("alice@bank.com", "secure123");
+		
+		// 4. Login to get token (using AppUser B's credentials)
+		String tokenB = login("bob@bank.com", "secure123");
 
-		// 4. Create Accounts
-		String accountAId = createAccount(userAId, token);
-		String accountBId = createAccount(userBId, token);
+		// 5. Create Accounts (using respective tokens)
+		String accountAId = createAccount(userAId, tokenA);
+		String accountBId = createAccount(userBId, tokenB);
 
-		// 5. Backdoor: Give Account A $100.00 (10000 cents) so they can transfer
+		// 6. Backdoor: Give Account A $100.00 (10000 cents) so they can transfer
 		Account accountA = accountRepository.findById(UUID.fromString(accountAId))
 		                                    .orElseThrow();
 		setField(accountA, "balance", 10000L);
 		accountRepository.save(accountA);
 
-		// 6. Transfer $50.00
+		// 7. Transfer $50.00 from A to B
 		TransactionRequest transferReq = TransactionRequest.builder()
 		                                                   .srcAccount(UUID.fromString(accountAId))
 		                                                   .destAccount(UUID.fromString(accountBId))
 		                                                   .amount(5000L) // $50.00
 		                                                   .build();
 
-		mockMvc.perform(post("/api/v1/transfers").header("Authorization", "Bearer " + token)
+		mockMvc.perform(post("/api/v1/transfers").header("Authorization", "Bearer " + tokenA)
 		                                         .contentType(MediaType.APPLICATION_JSON)
 		                                         .content(objectMapper.writeValueAsString(transferReq)))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("$.amount").value("50.00"))
 		       .andExpect(jsonPath("$.status").value("COMPLETED"));
 
-		// 7. Verify Balances via API
-		mockMvc.perform(get("/api/v1/accounts/" + accountAId).header("Authorization", "Bearer " + token))
+		// 8. Verify Balances via API
+		mockMvc.perform(get("/api/v1/accounts/" + accountAId).header("Authorization", "Bearer " + tokenA))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("$.balance").value("50.00"));
 
-		mockMvc.perform(get("/api/v1/accounts/" + accountBId).header("Authorization", "Bearer " + token))
+		mockMvc.perform(get("/api/v1/accounts/" + accountBId).header("Authorization", "Bearer " + tokenB))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("$.balance").value("50.00"));
 
-		// 8. Verify Transaction History
-		mockMvc.perform(get("/api/v1/accounts/" + accountAId + "/transactions?page=0&size=10").header("Authorization", "Bearer " + token))
+		// 9. Verify Transaction History
+		mockMvc.perform(get("/api/v1/accounts/" + accountAId + "/transactions?page=0&size=10").header("Authorization", "Bearer " + tokenA))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("$.totalElements").value(1))
 		       .andExpect(jsonPath("$.content[0].amount").value("50.00"))
@@ -111,10 +114,11 @@ public class BankApiIT extends BaseIntegrationTest {
 		String userCId = createUser("Charlie", "charlie@bank.com");
 		String userDId = createUser("Diana", "diana@bank.com");
 
-		String token = login("charlie@bank.com", "secure123");
+		String tokenC = login("charlie@bank.com", "secure123");
+		String tokenD = login("diana@bank.com", "secure123");
 
-		String accountCId = createAccount(userCId, token); // Balance starts at 0
-		String accountDId = createAccount(userDId, token); // Balance starts at 0
+		String accountCId = createAccount(userCId, tokenC); // Balance starts at 0
+		String accountDId = createAccount(userDId, tokenD); // Balance starts at 0
 
 		// 2. Attempt to transfer $50.00 when balance is 0
 		TransactionRequest transferReq = TransactionRequest.builder()
@@ -123,19 +127,19 @@ public class BankApiIT extends BaseIntegrationTest {
 		                                                   .amount(5000L) // $50.00
 		                                                   .build();
 
-		mockMvc.perform(post("/api/v1/transfers").header("Authorization", "Bearer " + token)
+		mockMvc.perform(post("/api/v1/transfers").header("Authorization", "Bearer " + tokenC)
 		                                         .contentType(MediaType.APPLICATION_JSON)
 		                                         .content(objectMapper.writeValueAsString(transferReq)))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(jsonPath("$.message").value("Insufficient balance in source account"));
 
 		// 3. Verify Balances remained 0 (Rolled back)
-		mockMvc.perform(get("/api/v1/accounts/" + accountCId).header("Authorization", "Bearer " + token))
+		mockMvc.perform(get("/api/v1/accounts/" + accountCId).header("Authorization", "Bearer " + tokenC))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("$.balance").value("0.00"));
 
 		// 4. Verify FAILED transaction was logged
-		mockMvc.perform(get("/api/v1/accounts/" + accountCId + "/transactions").header("Authorization", "Bearer " + token))
+		mockMvc.perform(get("/api/v1/accounts/" + accountCId + "/transactions").header("Authorization", "Bearer " + tokenC))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("$.totalElements").value(1))
 		       .andExpect(jsonPath("$.content[0].status").value("FAILED"));

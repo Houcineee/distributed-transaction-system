@@ -14,6 +14,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.prepost.PostAuthorize;
 
 @RestController
 public class AccountController {
@@ -25,16 +27,19 @@ public class AccountController {
 		this.transactionService = transactionService ;
 	}
 
+	@PostAuthorize("hasRole('ADMIN') or returnObject.body.userId == authentication.principal")
 	@GetMapping("/api/v1/accounts/{id}")
 	public ResponseEntity<AccountResponse> getAccountById(@PathVariable UUID id) {
 		return ResponseEntity.status(HttpStatus.OK).body(accountService.getAccountById(id));
 	}
 
+	@PreAuthorize("hasRole('ADMIN') or #req.userId == authentication.principal")
 	@PostMapping("/api/v1/accounts")
 	public ResponseEntity<AccountResponse> createAccount(@RequestBody @Valid CreateAccountRequest req) {
 		return ResponseEntity.status(HttpStatus.CREATED).body(accountService.createAccount(req));
 	}
 
+	@PreAuthorize("hasRole('ADMIN') or @securityService.isAccountOwner(authentication, #id)")
 	@GetMapping("/api/v1/accounts/{id}/transactions")
 	public ResponseEntity<Page<TransactionResponse>> getTransactionHistory(@PathVariable UUID id , Pageable pageable){
 		return ResponseEntity.status(HttpStatus.OK).body(transactionService.getTransactionsByAccountId(id , pageable)) ;

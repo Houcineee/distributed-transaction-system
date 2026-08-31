@@ -21,6 +21,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -91,7 +92,7 @@ class JwtAuthenticationFilterTest {
 		                                          .getAuthentication();
 		assertNotNull(authentication);
 		assertTrue(authentication.isAuthenticated());
-		assertEquals(java.util.UUID.fromString("550e8400-e29b-41d4-a716-446655440000"), authentication.getPrincipal());
+		assertEquals(UUID.fromString("550e8400-e29b-41d4-a716-446655440000"), authentication.getPrincipal());
 		assertEquals(1, authentication.getAuthorities()
 		                              .size());
 		assertEquals("ROLE_CUSTOMER", authentication.getAuthorities()
@@ -115,7 +116,7 @@ class JwtAuthenticationFilterTest {
 		var authentication = SecurityContextHolder.getContext()
 		                                          .getAuthentication();
 		assertNotNull(authentication);
-		assertEquals(java.util.UUID.fromString("550e8400-e29b-41d4-a716-446655440000"), authentication.getPrincipal());
+		assertEquals(UUID.fromString("550e8400-e29b-41d4-a716-446655440000"), authentication.getPrincipal());
 		assertEquals(2, authentication.getAuthorities()
 		                              .size());
 		var authorityNames = authentication.getAuthorities()
@@ -170,7 +171,7 @@ class JwtAuthenticationFilterTest {
 		var authentication = SecurityContextHolder.getContext()
 		                                          .getAuthentication();
 		assertNotNull(authentication);
-		assertEquals(java.util.UUID.fromString("550e8400-e29b-41d4-a716-446655440000"), authentication.getPrincipal());
+		assertEquals(UUID.fromString("550e8400-e29b-41d4-a716-446655440000"), authentication.getPrincipal());
 		assertTrue(authentication.getAuthorities()
 		                         .isEmpty());
 		verify(filterChain).doFilter(request, response);

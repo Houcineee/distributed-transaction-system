@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/v1/users")
@@ -23,12 +24,14 @@ public class UserController {
 		this.accountService = accountService ;
 	}
 
+	@PreAuthorize("hasRole('ADMIN') or #id == authentication.principal")
 	@GetMapping("/{id}")
 	ResponseEntity<UserResponse> getUserById(@PathVariable UUID id) {
 		return ResponseEntity.status(HttpStatus.OK).body(userService.getUserById(id));
 	}
 
 
+	@PreAuthorize("hasRole('ADMIN') or #id == authentication.principal")
 	@GetMapping("/{id}/accounts")
 	ResponseEntity<List<AccountResponse>> getAccountsByUserId(@PathVariable UUID id){
 		return ResponseEntity.status(HttpStatus.OK)
