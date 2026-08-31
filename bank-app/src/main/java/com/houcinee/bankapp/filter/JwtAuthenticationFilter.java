@@ -29,40 +29,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	}
 
 	@Override
-	protected void doFilterInternal(
-			@NonNull HttpServletRequest request,
-			@NonNull HttpServletResponse response,
-			@NonNull FilterChain filterChain
-	) throws ServletException, IOException {
+	protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain) throws ServletException, IOException {
 
 		final String authHeader = request.getHeader("Authorization");
 		final String jwt;
 
-		if(authHeader == null || !authHeader.startsWith("Bearer ")) {
+		if (authHeader == null || !authHeader.startsWith("Bearer ")) {
 			filterChain.doFilter(request, response);
 			return;
 		}
 		jwt = authHeader.substring(7);
 
-		if(SecurityContextHolder.getContext().getAuthentication() == null){
+		if (SecurityContextHolder.getContext()
+		                         .getAuthentication() == null) {
 
 			try {
-				var claims = jwtService.extractAllClaims(jwt) ;
+				var claims = jwtService.extractAllClaims(jwt);
 				log.debug("Authenticated user {} via JWT", claims.getSubject());
 
 				List<String> roles = (List<String>) claims.get("roles");
-				List<SimpleGrantedAuthority> authorities = (roles != null ? roles : Collections.<String>emptyList())
-						.stream()
-						.map(SimpleGrantedAuthority::new)
-						.toList();
+				List<SimpleGrantedAuthority> authorities = (roles != null ? roles : Collections.<String>emptyList()).stream()
+				                                                                                                    .map(SimpleGrantedAuthority::new)
+				                                                                                                    .toList();
 
-				var authToken = new UsernamePasswordAuthenticationToken(
-						claims.getSubject(),
-						null,
-						authorities
-				);
+				var authToken = new UsernamePasswordAuthenticationToken(claims.getSubject(), null, authorities);
 				authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-				SecurityContextHolder.getContext().setAuthentication(authToken);
+				SecurityContextHolder.getContext()
+				                     .setAuthentication(authToken);
 			} catch (Exception e) {
 				log.warn("Invalid JWT token detected: {}", e.getMessage());
 			}

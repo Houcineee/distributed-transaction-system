@@ -53,7 +53,7 @@ public class TransactionServiceTests {
 
 		Transaction dummyTransaction = new Transaction(10L, srcAccount, destAccount, COMPLETED);
 		ReflectionTestUtils.setField(dummyTransaction, "id", UUID.randomUUID());
-		
+
 		when(accountRepository.findAccountById(srcAccount.getId())).thenReturn(Optional.of(srcAccount));
 		when(accountRepository.findAccountById(destAccount.getId())).thenReturn(Optional.of(destAccount));
 		when(transactionLoggerService.saveTransaction(10L, srcAccount, destAccount, COMPLETED)).thenReturn(dummyTransaction);

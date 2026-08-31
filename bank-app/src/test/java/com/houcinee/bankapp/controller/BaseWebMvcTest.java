@@ -9,14 +9,14 @@ import org.springframework.test.web.servlet.MockMvc;
 
 public abstract class BaseWebMvcTest {
 
-    @Autowired
-    protected MockMvc mockMvc;
+	@Autowired
+	protected MockMvc mockMvc;
 
-    protected final ObjectMapper objectMapper = new ObjectMapper();
+	protected final ObjectMapper objectMapper = new ObjectMapper();
 
-    @MockitoBean
-    protected JwtService jwtService;
+	@MockitoBean
+	protected JwtService jwtService;
 
-    @MockitoBean
-    protected UserDetailsService userDetailsService;
+	@MockitoBean
+	protected UserDetailsService userDetailsService;
 }

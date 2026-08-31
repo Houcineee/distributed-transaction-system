@@ -16,8 +16,8 @@ import lombok.NoArgsConstructor;
 public class LoginRequest {
 	@NotBlank
 	@Email
-	private String email ;
+	private String email;
 	@NotBlank
 	@Size(min = 8, message = "Password must be at least 8 characters long")
-	private String password ;
+	private String password;
 }

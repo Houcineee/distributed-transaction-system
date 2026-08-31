@@ -21,33 +21,35 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(CustomerController.class)
 class CustomerControllerTest extends BaseWebMvcTest {
 
-    @MockitoBean
-    private CustomerService customerService;
-    @MockitoBean
-    private AccountService accountService;
+	@MockitoBean
+	private CustomerService customerService;
+	@MockitoBean
+	private AccountService accountService;
 
-    @Test
-    void givenValidId_whenGetCustomer_thenReturns200() throws Exception {
-        UUID randomId = UUID.randomUUID();
-        String name = "test";
-        String email = "test@test.com";
-        CustomerResponse res = CustomerResponse.builder().name(name).email(email).id(randomId).build();
+	@Test
+	void givenValidId_whenGetCustomer_thenReturns200() throws Exception {
+		UUID randomId = UUID.randomUUID();
+		String name = "test";
+		String email = "test@test.com";
+		CustomerResponse res = CustomerResponse.builder()
+		                                       .name(name)
+		                                       .email(email)
+		                                       .id(randomId)
+		                                       .build();
 
-        when(customerService.getCustomerById(randomId)).thenReturn(res);
+		when(customerService.getCustomerById(randomId)).thenReturn(res);
 
-        mockMvc.perform(get("/api/v1/customers/" + randomId)
-               .contentType(MediaType.APPLICATION_JSON))
-               .andExpect(status().isOk())
-               .andExpect(jsonPath("$.name").value(name))
-               .andExpect(jsonPath("$.id").value(randomId.toString()));
-    }
+		mockMvc.perform(get("/api/v1/customers/" + randomId).contentType(MediaType.APPLICATION_JSON))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("$.name").value(name))
+		       .andExpect(jsonPath("$.id").value(randomId.toString()));
+	}
 
-    @Test
-    void givenInvalidId_whenGetCustomer_thenReturns400() throws Exception {
-        String randomId = "not-a-valid-id";
+	@Test
+	void givenInvalidId_whenGetCustomer_thenReturns400() throws Exception {
+		String randomId = "not-a-valid-id";
 
-        mockMvc.perform(get("/api/v1/customers/" + randomId)
-               .contentType(MediaType.APPLICATION_JSON))
-               .andExpect(status().isBadRequest());
-    }
+		mockMvc.perform(get("/api/v1/customers/" + randomId).contentType(MediaType.APPLICATION_JSON))
+		       .andExpect(status().isBadRequest());
+	}
 }

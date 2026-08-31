@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
 import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -22,12 +23,12 @@ import java.util.UUID;
 public class TransactionService {
 	private final AccountRepository accountRepository;
 	private final TransactionLoggerService transactionLoggerService;
-	private final TransactionRepository transactionRepository ;
+	private final TransactionRepository transactionRepository;
 
-	public TransactionService(AccountRepository accountRepository, TransactionLoggerService transactionLoggerService , TransactionRepository transactionRepository) {
+	public TransactionService(AccountRepository accountRepository, TransactionLoggerService transactionLoggerService, TransactionRepository transactionRepository) {
 		this.accountRepository = accountRepository;
 		this.transactionLoggerService = transactionLoggerService;
-		this.transactionRepository = transactionRepository ;
+		this.transactionRepository = transactionRepository;
 	}
 
 	@Transactional
@@ -42,8 +43,8 @@ public class TransactionService {
 		try {
 			srcAccount.debit(amount);
 			destAccount.credit(amount);
-			Transaction transaction =  transactionLoggerService.saveTransaction(amount, srcAccount, destAccount, TransactionStatus.COMPLETED);
-			return toTransactionResponse(transaction) ;
+			Transaction transaction = transactionLoggerService.saveTransaction(amount, srcAccount, destAccount, TransactionStatus.COMPLETED);
+			return toTransactionResponse(transaction);
 		} catch (IllegalArgumentException e) {
 			transactionLoggerService.saveTransaction(amount, srcAccount, destAccount, TransactionStatus.FAILED);
 			throw e;
@@ -61,35 +62,39 @@ public class TransactionService {
 	}
 
 
-	public Page<TransactionResponse> getTransactionsByAccountId(UUID id , Pageable pageable){
+	public Page<TransactionResponse> getTransactionsByAccountId(UUID id, Pageable pageable) {
 		log.info("Fetching paginated transaction history for account id: {}", id);
-		if(!accountRepository.existsById(id)){
-			throw new ResourceNotFoundException("Account not found with id: " + id) ;
+		if (!accountRepository.existsById(id)) {
+			throw new ResourceNotFoundException("Account not found with id: " + id);
 		}
-		Page<Transaction> transactionsPage = transactionRepository.findAccountTransactions(id , pageable) ;
+		Page<Transaction> transactionsPage = transactionRepository.findAccountTransactions(id, pageable);
 
-		return transactionsPage.map(this::toTransactionResponse) ;
+		return transactionsPage.map(this::toTransactionResponse);
 	}
 
 	private Account[] getAccountInLockOrder(UUID id1, UUID id2) {
 		UUID firstId = id1.compareTo(id2) < 0 ? id1 : id2;
 		UUID secondId = id1.compareTo(id2) < 0 ? id2 : id1;
 
-		Account first = accountRepository.findAccountById(firstId).orElseThrow(() -> new ResourceNotFoundException("Account not found" + firstId));
-		Account second = accountRepository.findAccountById(secondId).orElseThrow(() -> new ResourceNotFoundException("Account not found" + secondId));
+		Account first = accountRepository.findAccountById(firstId)
+		                                 .orElseThrow(() -> new ResourceNotFoundException("Account not found" + firstId));
+		Account second = accountRepository.findAccountById(secondId)
+		                                  .orElseThrow(() -> new ResourceNotFoundException("Account not found" + secondId));
 
 		return new Account[]{first, second};
 	}
 
 
-	private TransactionResponse toTransactionResponse(Transaction transaction){
+	private TransactionResponse toTransactionResponse(Transaction transaction) {
 		return TransactionResponse.builder()
-				.id(transaction.getId())
-				.createdAt(transaction.getCreatedAt())
-				.status(transaction.getStatus())
-				.sourceAccountId(transaction.getSourceAccount().getId())
-				.destinationAccountId(transaction.getDestAccount().getId())
-				.amount(MoneyUtil.formatCents(transaction.getAmount()))
-				.build();
+		                          .id(transaction.getId())
+		                          .createdAt(transaction.getCreatedAt())
+		                          .status(transaction.getStatus())
+		                          .sourceAccountId(transaction.getSourceAccount()
+		                                                      .getId())
+		                          .destinationAccountId(transaction.getDestAccount()
+		                                                           .getId())
+		                          .amount(MoneyUtil.formatCents(transaction.getAmount()))
+		                          .build();
 	}
 }

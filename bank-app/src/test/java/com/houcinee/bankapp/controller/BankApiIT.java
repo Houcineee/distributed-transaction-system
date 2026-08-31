@@ -31,180 +31,183 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 public class BankApiIT extends BaseIntegrationTest {
 
-    @Autowired
-    private MockMvc mockMvc  ;
+	@Autowired
+	private MockMvc mockMvc;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+	private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Autowired
-    private AccountRepository accountRepository;
+	@Autowired
+	private AccountRepository accountRepository;
 
-    @Autowired
-    private CustomerRepository customerRepository;
+	@Autowired
+	private CustomerRepository customerRepository;
 
-    @Autowired
-    private TransactionRepository transactionRepository;
+	@Autowired
+	private TransactionRepository transactionRepository;
 
-    @AfterEach
-    void tearDown() {
-        transactionRepository.deleteAllInBatch();
-        accountRepository.deleteAllInBatch();
-        customerRepository.deleteAllInBatch();
-    }
+	@AfterEach
+	void tearDown() {
+		transactionRepository.deleteAllInBatch();
+		accountRepository.deleteAllInBatch();
+		customerRepository.deleteAllInBatch();
+	}
 
-    @Test
-    void goldenPath_fullEndToEndTransfer() throws Exception {
-        // 1. Create Customer A
-        String customerAId = createCustomer("Alice", "alice@bank.com");
+	@Test
+	void goldenPath_fullEndToEndTransfer() throws Exception {
+		// 1. Create Customer A
+		String customerAId = createCustomer("Alice", "alice@bank.com");
 
-        // 2. Create Customer B
-        String customerBId = createCustomer("Bob", "bob@bank.com");
+		// 2. Create Customer B
+		String customerBId = createCustomer("Bob", "bob@bank.com");
 
-        // 3. Login to get token (using Customer A's credentials)
-        String token = login("alice@bank.com", "secure123");
+		// 3. Login to get token (using Customer A's credentials)
+		String token = login("alice@bank.com", "secure123");
 
-        // 4. Create Accounts
-        String accountAId = createAccount(customerAId, token);
-        String accountBId = createAccount(customerBId, token);
+		// 4. Create Accounts
+		String accountAId = createAccount(customerAId, token);
+		String accountBId = createAccount(customerBId, token);
 
-        // 5. Backdoor: Give Account A $100.00 (10000 cents) so they can transfer
-        Account accountA = accountRepository.findById(UUID.fromString(accountAId)).orElseThrow();
-        setField(accountA, "balance", 10000L);
-        accountRepository.save(accountA);
+		// 5. Backdoor: Give Account A $100.00 (10000 cents) so they can transfer
+		Account accountA = accountRepository.findById(UUID.fromString(accountAId))
+		                                    .orElseThrow();
+		setField(accountA, "balance", 10000L);
+		accountRepository.save(accountA);
 
-        // 6. Transfer $50.00
-        TransactionRequest transferReq = TransactionRequest.builder()
-                .srcAccount(UUID.fromString(accountAId))
-                .destAccount(UUID.fromString(accountBId))
-                .amount(5000L) // $50.00
-                .build();
+		// 6. Transfer $50.00
+		TransactionRequest transferReq = TransactionRequest.builder()
+		                                                   .srcAccount(UUID.fromString(accountAId))
+		                                                   .destAccount(UUID.fromString(accountBId))
+		                                                   .amount(5000L) // $50.00
+		                                                   .build();
 
-        mockMvc.perform(post("/api/v1/transfers")
-                .header("Authorization", "Bearer " + token)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(transferReq)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.amount").value("50.00"))
-                .andExpect(jsonPath("$.status").value("COMPLETED"));
+		mockMvc.perform(post("/api/v1/transfers").header("Authorization", "Bearer " + token)
+		                                         .contentType(MediaType.APPLICATION_JSON)
+		                                         .content(objectMapper.writeValueAsString(transferReq)))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("$.amount").value("50.00"))
+		       .andExpect(jsonPath("$.status").value("COMPLETED"));
 
-        // 7. Verify Balances via API
-        mockMvc.perform(get("/api/v1/accounts/" + accountAId)
-                .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.balance").value("50.00"));
+		// 7. Verify Balances via API
+		mockMvc.perform(get("/api/v1/accounts/" + accountAId).header("Authorization", "Bearer " + token))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("$.balance").value("50.00"));
 
-        mockMvc.perform(get("/api/v1/accounts/" + accountBId)
-                .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.balance").value("50.00"));
-                
-        // 8. Verify Transaction History
-        mockMvc.perform(get("/api/v1/accounts/" + accountAId + "/transactions?page=0&size=10")
-                .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElements").value(1))
-                .andExpect(jsonPath("$.content[0].amount").value("50.00"))
-                .andExpect(jsonPath("$.content[0].status").value("COMPLETED"));
-    }
+		mockMvc.perform(get("/api/v1/accounts/" + accountBId).header("Authorization", "Bearer " + token))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("$.balance").value("50.00"));
 
-    @Test
-    void rollbackPath_insufficientFunds() throws Exception {
-        // 1. Create Customers & Accounts
-        String customerCId = createCustomer("Charlie", "charlie@bank.com");
-        String customerDId = createCustomer("Diana", "diana@bank.com");
-        
-        String token = login("charlie@bank.com", "secure123");
+		// 8. Verify Transaction History
+		mockMvc.perform(get("/api/v1/accounts/" + accountAId + "/transactions?page=0&size=10").header("Authorization", "Bearer " + token))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("$.totalElements").value(1))
+		       .andExpect(jsonPath("$.content[0].amount").value("50.00"))
+		       .andExpect(jsonPath("$.content[0].status").value("COMPLETED"));
+	}
 
-        String accountCId = createAccount(customerCId, token); // Balance starts at 0
-        String accountDId = createAccount(customerDId, token); // Balance starts at 0
+	@Test
+	void rollbackPath_insufficientFunds() throws Exception {
+		// 1. Create Customers & Accounts
+		String customerCId = createCustomer("Charlie", "charlie@bank.com");
+		String customerDId = createCustomer("Diana", "diana@bank.com");
 
-        // 2. Attempt to transfer $50.00 when balance is 0
-        TransactionRequest transferReq = TransactionRequest.builder()
-                .srcAccount(UUID.fromString(accountCId))
-                .destAccount(UUID.fromString(accountDId))
-                .amount(5000L) // $50.00
-                .build();
+		String token = login("charlie@bank.com", "secure123");
 
-        mockMvc.perform(post("/api/v1/transfers")
-                .header("Authorization", "Bearer " + token)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(transferReq)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Insufficient balance in source account"));
+		String accountCId = createAccount(customerCId, token); // Balance starts at 0
+		String accountDId = createAccount(customerDId, token); // Balance starts at 0
 
-        // 3. Verify Balances remained 0 (Rolled back)
-        mockMvc.perform(get("/api/v1/accounts/" + accountCId)
-                .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.balance").value("0.00"));
+		// 2. Attempt to transfer $50.00 when balance is 0
+		TransactionRequest transferReq = TransactionRequest.builder()
+		                                                   .srcAccount(UUID.fromString(accountCId))
+		                                                   .destAccount(UUID.fromString(accountDId))
+		                                                   .amount(5000L) // $50.00
+		                                                   .build();
 
-        // 4. Verify FAILED transaction was logged
-        mockMvc.perform(get("/api/v1/accounts/" + accountCId + "/transactions")
-                .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElements").value(1))
-                .andExpect(jsonPath("$.content[0].status").value("FAILED"));
-    }
+		mockMvc.perform(post("/api/v1/transfers").header("Authorization", "Bearer " + token)
+		                                         .contentType(MediaType.APPLICATION_JSON)
+		                                         .content(objectMapper.writeValueAsString(transferReq)))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(jsonPath("$.message").value("Insufficient balance in source account"));
 
-    @Test
-    void registration_hashesPasswordInDatabase() throws Exception {
-        String rawPassword = "superSecretPassword!";
-        RegisterRequest req = RegisterRequest.builder()
-                .name("Eve")
-                .email("eve@hacker.com")
-                .password(rawPassword)
-                .build();
+		// 3. Verify Balances remained 0 (Rolled back)
+		mockMvc.perform(get("/api/v1/accounts/" + accountCId).header("Authorization", "Bearer " + token))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("$.balance").value("0.00"));
 
-        MvcResult result = mockMvc.perform(post("/api/v1/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(req)))
-                .andExpect(status().isCreated())
-                .andReturn();
+		// 4. Verify FAILED transaction was logged
+		mockMvc.perform(get("/api/v1/accounts/" + accountCId + "/transactions").header("Authorization", "Bearer " + token))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("$.totalElements").value(1))
+		       .andExpect(jsonPath("$.content[0].status").value("FAILED"));
+	}
 
-        String customerIdStr = JsonPath.read(result.getResponse().getContentAsString(), "$.id");
-        UUID customerId = UUID.fromString(customerIdStr);
+	@Test
+	void registration_hashesPasswordInDatabase() throws Exception {
+		String rawPassword = "superSecretPassword!";
+		RegisterRequest req = RegisterRequest.builder()
+		                                     .name("Eve")
+		                                     .email("eve@hacker.com")
+		                                     .password(rawPassword)
+		                                     .build();
 
-        com.houcinee.bankapp.model.Customer savedCustomer = customerRepository.findById(customerId).orElseThrow();
-        
-        // Assert that the database value is NOT the raw password
-        org.junit.jupiter.api.Assertions.assertNotEquals(rawPassword, savedCustomer.getPassword());
-        
-        // Bcrypt hashes start with $2a$, $2b$, or $2y$
-        org.junit.jupiter.api.Assertions.assertTrue(savedCustomer.getPassword().startsWith("$2a$"));
-    }
+		MvcResult result = mockMvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON)
+		                                                                .content(objectMapper.writeValueAsString(req)))
+		                          .andExpect(status().isCreated())
+		                          .andReturn();
 
-    // --- Helpers ---
-    private String createCustomer(String name, String email) throws Exception {
-        RegisterRequest req = RegisterRequest.builder().name(name).email(email).password("secure123").build();
-        MvcResult result = mockMvc.perform(post("/api/v1/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(req)))
-                .andExpect(status().isCreated())
-                .andReturn();
-        return JsonPath.read(result.getResponse().getContentAsString(), "$.id");
-    }
+		String customerIdStr = JsonPath.read(result.getResponse()
+		                                           .getContentAsString(), "$.id");
+		UUID customerId = UUID.fromString(customerIdStr);
 
-    private String login(String email, String password) throws Exception {
-        LoginRequest req = LoginRequest.builder().email(email).password(password).build();
-        MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(req)))
-                .andExpect(status().isOk())
-                .andReturn();
-        return JsonPath.read(result.getResponse().getContentAsString(), "$.token");
-    }
+		com.houcinee.bankapp.model.Customer savedCustomer = customerRepository.findById(customerId)
+		                                                                      .orElseThrow();
 
-    private String createAccount(String customerId, String token) throws Exception {
-        CreateAccountRequest req = CreateAccountRequest.builder()
-                .customerId(UUID.fromString(customerId))
-                .currency(Currency.MAD)
-                .build();
-        MvcResult result = mockMvc.perform(post("/api/v1/accounts")
-                .header("Authorization", "Bearer " + token)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(req)))
-                .andExpect(status().isCreated())
-                .andReturn();
-        return JsonPath.read(result.getResponse().getContentAsString(), "$.id");
-    }
+		// Assert that the database value is NOT the raw password
+		org.junit.jupiter.api.Assertions.assertNotEquals(rawPassword, savedCustomer.getPassword());
+
+		// Bcrypt hashes start with $2a$, $2b$, or $2y$
+		org.junit.jupiter.api.Assertions.assertTrue(savedCustomer.getPassword()
+		                                                         .startsWith("$2a$"));
+	}
+
+	// --- Helpers ---
+	private String createCustomer(String name, String email) throws Exception {
+		RegisterRequest req = RegisterRequest.builder()
+		                                     .name(name)
+		                                     .email(email)
+		                                     .password("secure123")
+		                                     .build();
+		MvcResult result = mockMvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON)
+		                                                                .content(objectMapper.writeValueAsString(req)))
+		                          .andExpect(status().isCreated())
+		                          .andReturn();
+		return JsonPath.read(result.getResponse()
+		                           .getContentAsString(), "$.id");
+	}
+
+	private String login(String email, String password) throws Exception {
+		LoginRequest req = LoginRequest.builder()
+		                               .email(email)
+		                               .password(password)
+		                               .build();
+		MvcResult result = mockMvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
+		                                                             .content(objectMapper.writeValueAsString(req)))
+		                          .andExpect(status().isOk())
+		                          .andReturn();
+		return JsonPath.read(result.getResponse()
+		                           .getContentAsString(), "$.token");
+	}
+
+	private String createAccount(String customerId, String token) throws Exception {
+		CreateAccountRequest req = CreateAccountRequest.builder()
+		                                               .customerId(UUID.fromString(customerId))
+		                                               .currency(Currency.MAD)
+		                                               .build();
+		MvcResult result = mockMvc.perform(post("/api/v1/accounts").header("Authorization", "Bearer " + token)
+		                                                           .contentType(MediaType.APPLICATION_JSON)
+		                                                           .content(objectMapper.writeValueAsString(req)))
+		                          .andExpect(status().isCreated())
+		                          .andReturn();
+		return JsonPath.read(result.getResponse()
+		                           .getContentAsString(), "$.id");
+	}
 }

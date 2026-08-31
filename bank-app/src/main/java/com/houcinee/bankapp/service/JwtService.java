@@ -28,9 +28,10 @@ public class JwtService {
 
 	public String generateToken(UserDetails userDetails) {
 		HashMap<String, Object> claims = new HashMap<>();
-		List<String> roles = userDetails.getAuthorities().stream()
-		                     .map(GrantedAuthority::getAuthority)
-		                     .toList();
+		List<String> roles = userDetails.getAuthorities()
+		                                .stream()
+		                                .map(GrantedAuthority::getAuthority)
+		                                .toList();
 		claims.put("roles", roles);
 		return generateToken(claims, userDetails);
 	}
@@ -41,7 +42,8 @@ public class JwtService {
 		           .subject(userDetails.getUsername())
 		           .issuedAt(new Date(currentTimeMillis()))
 		           .expiration(new Date(currentTimeMillis() + jwtExpiration))
-		           .signWith(getSignInKey()).compact();
+		           .signWith(getSignInKey())
+		           .compact();
 	}
 
 

@@ -17,16 +17,16 @@ import java.util.UUID;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class CorrelationIdFilter extends OncePerRequestFilter {
 
-    @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        String correlationId  = request.getHeader("X-Correlation-ID") ;
-        if(correlationId == null) correlationId = String.valueOf(UUID.randomUUID());
-        MDC.put("correlationId" , correlationId) ;
-        response.addHeader("X-Correlation-ID" , correlationId);
-        try {
-            filterChain.doFilter(request , response);
-        }finally {
-            MDC.clear();
-        }
-    }
+	@Override
+	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+		String correlationId = request.getHeader("X-Correlation-ID");
+		if (correlationId == null) correlationId = String.valueOf(UUID.randomUUID());
+		MDC.put("correlationId", correlationId);
+		response.addHeader("X-Correlation-ID", correlationId);
+		try {
+			filterChain.doFilter(request, response);
+		} finally {
+			MDC.clear();
+		}
+	}
 }

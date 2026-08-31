@@ -43,13 +43,19 @@ public class CustomerService {
 	public CustomerResponse getCustomerById(UUID id) {
 		log.info("Fetching customer profile for id: {}", id);
 
-		Customer customer = customerRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + id));
+		Customer customer = customerRepository.findById(id)
+		                                      .orElseThrow(() -> new ResourceNotFoundException("Customer not found with id: " + id));
 
 		return toCustomerResponse(customer);
 	}
 
 	//Helper Method
 	private CustomerResponse toCustomerResponse(Customer customer) {
-		return CustomerResponse.builder().id(customer.getId()).name(customer.getName()).email(customer.getEmail()).createdAt(customer.getCreatedAt()).build();
+		return CustomerResponse.builder()
+		                       .id(customer.getId())
+		                       .name(customer.getName())
+		                       .email(customer.getEmail())
+		                       .createdAt(customer.getCreatedAt())
+		                       .build();
 	}
 }

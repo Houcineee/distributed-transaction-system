@@ -28,146 +28,150 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class JwtAuthenticationFilterTest {
 
-    @Mock
-    private JwtService jwtService;
+	@Mock
+	private JwtService jwtService;
 
-    @Mock
-    private FilterChain filterChain;
+	@Mock
+	private FilterChain filterChain;
 
-    @InjectMocks
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
+	@InjectMocks
+	private JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    private MockHttpServletRequest request;
-    private MockHttpServletResponse response;
+	private MockHttpServletRequest request;
+	private MockHttpServletResponse response;
 
-    @BeforeEach
-    void setUp() {
-        request = new MockHttpServletRequest();
-        response = new MockHttpServletResponse();
-        SecurityContextHolder.clearContext();
-    }
+	@BeforeEach
+	void setUp() {
+		request = new MockHttpServletRequest();
+		response = new MockHttpServletResponse();
+		SecurityContextHolder.clearContext();
+	}
 
-    @AfterEach
-    void tearDown() {
-        SecurityContextHolder.clearContext();
-    }
+	@AfterEach
+	void tearDown() {
+		SecurityContextHolder.clearContext();
+	}
 
-    @Test
-    void shouldPassThroughWhenNoAuthorizationHeader() throws ServletException, IOException {
-        // No Authorization header set
+	@Test
+	void shouldPassThroughWhenNoAuthorizationHeader() throws ServletException, IOException {
+		// No Authorization header set
 
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+		jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
-        assertNull(SecurityContextHolder.getContext().getAuthentication());
-        verify(filterChain).doFilter(request, response);
-        verifyNoInteractions(jwtService);
-    }
+		assertNull(SecurityContextHolder.getContext()
+		                                .getAuthentication());
+		verify(filterChain).doFilter(request, response);
+		verifyNoInteractions(jwtService);
+	}
 
-    @Test
-    void shouldPassThroughWhenAuthorizationHeaderIsNotBearer() throws ServletException, IOException {
-        request.addHeader("Authorization", "Basic some-credentials");
+	@Test
+	void shouldPassThroughWhenAuthorizationHeaderIsNotBearer() throws ServletException, IOException {
+		request.addHeader("Authorization", "Basic some-credentials");
 
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+		jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
-        assertNull(SecurityContextHolder.getContext().getAuthentication());
-        verify(filterChain).doFilter(request, response);
-        verifyNoInteractions(jwtService);
-    }
+		assertNull(SecurityContextHolder.getContext()
+		                                .getAuthentication());
+		verify(filterChain).doFilter(request, response);
+		verifyNoInteractions(jwtService);
+	}
 
-    @Test
-    void shouldAuthenticateUserWithValidToken() throws ServletException, IOException {
-        String token = "valid.jwt.token";
-        request.addHeader("Authorization", "Bearer " + token);
+	@Test
+	void shouldAuthenticateUserWithValidToken() throws ServletException, IOException {
+		String token = "valid.jwt.token";
+		request.addHeader("Authorization", "Bearer " + token);
 
-        Claims claims = new DefaultClaims(Map.of(
-                "sub", "alice@bank.com",
-                "roles", List.of("ROLE_USER")
-        ));
+		Claims claims = new DefaultClaims(Map.of("sub", "alice@bank.com", "roles", List.of("ROLE_USER")));
 
-        when(jwtService.extractAllClaims(token)).thenReturn(claims);
+		when(jwtService.extractAllClaims(token)).thenReturn(claims);
 
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+		jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        assertNotNull(authentication);
-        assertTrue(authentication.isAuthenticated());
-        assertEquals("alice@bank.com", authentication.getPrincipal());
-        assertEquals(1, authentication.getAuthorities().size());
-        assertEquals("ROLE_USER", authentication.getAuthorities().iterator().next().getAuthority());
-        verify(filterChain).doFilter(request, response);
-    }
+		var authentication = SecurityContextHolder.getContext()
+		                                          .getAuthentication();
+		assertNotNull(authentication);
+		assertTrue(authentication.isAuthenticated());
+		assertEquals("alice@bank.com", authentication.getPrincipal());
+		assertEquals(1, authentication.getAuthorities()
+		                              .size());
+		assertEquals("ROLE_USER", authentication.getAuthorities()
+		                                        .iterator()
+		                                        .next()
+		                                        .getAuthority());
+		verify(filterChain).doFilter(request, response);
+	}
 
-    @Test
-    void shouldPopulateMultipleRoles() throws ServletException, IOException {
-        String token = "valid.jwt.token";
-        request.addHeader("Authorization", "Bearer " + token);
+	@Test
+	void shouldPopulateMultipleRoles() throws ServletException, IOException {
+		String token = "valid.jwt.token";
+		request.addHeader("Authorization", "Bearer " + token);
 
-        Claims claims = new DefaultClaims(Map.of(
-                "sub", "admin@bank.com",
-                "roles", List.of("ROLE_USER", "ROLE_ADMIN")
-        ));
+		Claims claims = new DefaultClaims(Map.of("sub", "admin@bank.com", "roles", List.of("ROLE_USER", "ROLE_ADMIN")));
 
-        when(jwtService.extractAllClaims(token)).thenReturn(claims);
+		when(jwtService.extractAllClaims(token)).thenReturn(claims);
 
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+		jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        assertNotNull(authentication);
-        assertEquals(2, authentication.getAuthorities().size());
-        var authorityNames = authentication.getAuthorities().stream()
-                .map(Object::toString)
-                .toList();
-        assertTrue(authorityNames.contains("ROLE_USER"));
-        assertTrue(authorityNames.contains("ROLE_ADMIN"));
-        verify(filterChain).doFilter(request, response);
-    }
+		var authentication = SecurityContextHolder.getContext()
+		                                          .getAuthentication();
+		assertNotNull(authentication);
+		assertEquals(2, authentication.getAuthorities()
+		                              .size());
+		var authorityNames = authentication.getAuthorities()
+		                                   .stream()
+		                                   .map(Object::toString)
+		                                   .toList();
+		assertTrue(authorityNames.contains("ROLE_USER"));
+		assertTrue(authorityNames.contains("ROLE_ADMIN"));
+		verify(filterChain).doFilter(request, response);
+	}
 
-    @Test
-    void shouldNotAuthenticateWhenTokenIsExpired() throws ServletException, IOException {
-        String token = "expired.jwt.token";
-        request.addHeader("Authorization", "Bearer " + token);
+	@Test
+	void shouldNotAuthenticateWhenTokenIsExpired() throws ServletException, IOException {
+		String token = "expired.jwt.token";
+		request.addHeader("Authorization", "Bearer " + token);
 
-        when(jwtService.extractAllClaims(token)).thenThrow(
-                new ExpiredJwtException(null, null, "Token expired")
-        );
+		when(jwtService.extractAllClaims(token)).thenThrow(new ExpiredJwtException(null, null, "Token expired"));
 
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+		jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
-        assertNull(SecurityContextHolder.getContext().getAuthentication());
-        verify(filterChain).doFilter(request, response);
-    }
+		assertNull(SecurityContextHolder.getContext()
+		                                .getAuthentication());
+		verify(filterChain).doFilter(request, response);
+	}
 
-    @Test
-    void shouldNotAuthenticateWhenTokenIsTampered() throws ServletException, IOException {
-        String token = "tampered.jwt.token";
-        request.addHeader("Authorization", "Bearer " + token);
+	@Test
+	void shouldNotAuthenticateWhenTokenIsTampered() throws ServletException, IOException {
+		String token = "tampered.jwt.token";
+		request.addHeader("Authorization", "Bearer " + token);
 
-        when(jwtService.extractAllClaims(token)).thenThrow(
-                new SignatureException("Invalid signature")
-        );
+		when(jwtService.extractAllClaims(token)).thenThrow(new SignatureException("Invalid signature"));
 
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+		jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
-        assertNull(SecurityContextHolder.getContext().getAuthentication());
-        verify(filterChain).doFilter(request, response);
-    }
+		assertNull(SecurityContextHolder.getContext()
+		                                .getAuthentication());
+		verify(filterChain).doFilter(request, response);
+	}
 
-    @Test
-    void shouldHandleTokenWithoutRolesClaim() throws ServletException, IOException {
-        String token = "no.roles.token";
-        request.addHeader("Authorization", "Bearer " + token);
+	@Test
+	void shouldHandleTokenWithoutRolesClaim() throws ServletException, IOException {
+		String token = "no.roles.token";
+		request.addHeader("Authorization", "Bearer " + token);
 
-        // Token has a subject but no roles claim
-        Claims claims = new DefaultClaims(Map.of("sub", "legacy@bank.com"));
+		// Token has a subject but no roles claim
+		Claims claims = new DefaultClaims(Map.of("sub", "legacy@bank.com"));
 
-        when(jwtService.extractAllClaims(token)).thenReturn(claims);
+		when(jwtService.extractAllClaims(token)).thenReturn(claims);
 
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+		jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        assertNotNull(authentication);
-        assertEquals("legacy@bank.com", authentication.getPrincipal());
-        assertTrue(authentication.getAuthorities().isEmpty());
-        verify(filterChain).doFilter(request, response);
-    }
+		var authentication = SecurityContextHolder.getContext()
+		                                          .getAuthentication();
+		assertNotNull(authentication);
+		assertEquals("legacy@bank.com", authentication.getPrincipal());
+		assertTrue(authentication.getAuthorities()
+		                         .isEmpty());
+		verify(filterChain).doFilter(request, response);
+	}
 }
