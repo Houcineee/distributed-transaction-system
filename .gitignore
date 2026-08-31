@@ -2,6 +2,9 @@
 .internship/
 findings/
 
+# Dev secrets (never commit)
+**/application-dev.properties
+
 .agents/
 # Java / Spring Boot
 target/

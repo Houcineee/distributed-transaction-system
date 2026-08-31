@@ -37,7 +37,7 @@ public class AccountServiceTests {
 
 	@Test
 	public void givenValidData_whenCreateAccount_thenReturnAccountResponse() {
-		Customer customer = new Customer("test" , "test@test.com") ;
+		Customer customer = new Customer("test" , "test@test.com", "password", com.houcinee.bankapp.enums.Role.USER) ;
 		ReflectionTestUtils.setField(customer, "id", UUID.randomUUID());
 		CreateAccountRequest accountRequest =  CreateAccountRequest.builder()
 		                                                           .customerId(customer.getId()).currency(Currency.MAD)
@@ -67,7 +67,7 @@ public class AccountServiceTests {
 
 	@Test
 	public void givenValidId_whenGetAccountById_thenReturnAccountResponse() {
-		Customer customer = new Customer("test", "test@test.com");
+		Customer customer = new Customer("test", "test@test.com", "password", com.houcinee.bankapp.enums.Role.USER);
 		ReflectionTestUtils.setField(customer, "id", UUID.randomUUID());
 		
 		Account account = new Account(15000L, Currency.MAD, customer);
@@ -94,7 +94,7 @@ public class AccountServiceTests {
 	@Test
 	public void givenValidCustomerId_whenGetAccountsByCustomerId_thenReturnList() {
 		UUID customerId = UUID.randomUUID();
-		Customer customer = new Customer("test", "test@test.com");
+		Customer customer = new Customer("test", "test@test.com", "password", com.houcinee.bankapp.enums.Role.USER);
 		ReflectionTestUtils.setField(customer, "id", customerId);
 		
 		Account account = new Account(1000L, Currency.MAD, customer);

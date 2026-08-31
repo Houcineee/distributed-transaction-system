@@ -23,12 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(TransactionController.class)
-class TransactionControllerTest {
-
-    @Autowired
-    private MockMvc mockMvc;
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
+class TransactionControllerTest extends BaseWebMvcTest {
 
     @MockitoBean
     private TransactionService transactionService;

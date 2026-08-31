@@ -2,7 +2,6 @@ package com.houcinee.bankapp.controller;
 
 
 import com.houcinee.bankapp.dto.AccountResponse;
-import com.houcinee.bankapp.dto.CreateCustomerRequest;
 import com.houcinee.bankapp.dto.CustomerResponse;
 import com.houcinee.bankapp.service.AccountService;
 import com.houcinee.bankapp.service.CustomerService;
@@ -29,10 +28,6 @@ public class CustomerController {
 		return ResponseEntity.status(HttpStatus.OK).body(customerService.getCustomerById(id));
 	}
 
-	@PostMapping("/api/v1/customers")
-	ResponseEntity<CustomerResponse> createCustomer(@Valid @RequestBody CreateCustomerRequest req) {
-		return ResponseEntity.status(HttpStatus.CREATED).body(customerService.createCustomer(req));
-	}
 
 	@GetMapping("/api/v1/customers/{id}/accounts")
 	ResponseEntity<List<AccountResponse>> getAccountsByCustomerId(@PathVariable UUID id){

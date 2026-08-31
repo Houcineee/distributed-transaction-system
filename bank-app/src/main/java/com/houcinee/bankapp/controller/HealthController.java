@@ -13,10 +13,10 @@ import java.util.Map;
 @Slf4j
 @RestController
 public class HealthController {
-    @GetMapping("/api/health")
-    Map<String, String> getHealth(){
-        log.info("health endpoint was called !");
-        return Map.of("status" , "ok");
-    }
+	@GetMapping("/api/health")
+	Map<String, String> getHealth() {
+		log.info("health endpoint was called !");
+		return Map.of("status", "ok");
+	}
 
 }

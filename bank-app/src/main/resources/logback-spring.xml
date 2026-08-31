@@ -6,12 +6,14 @@
     <springProfile name="dev">
         <appender name="CONSOLE_DEV" class="ch.qos.logback.core.ConsoleAppender">
             <encoder>
-                <pattern>%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%-5level) %clr([%thread]){magenta} %clr([%X{correlationId}]){cyan} %clr(%logger{36}){cyan} - %msg%n</pattern>
+                <pattern>%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%-5level) %clr([%thread]){magenta}
+                    %clr([%X{correlationId}]){cyan} %clr(%logger{36}){cyan} - %msg%n
+                </pattern>
             </encoder>
         </appender>
 
         <root level="INFO">
-            <appender-ref ref="CONSOLE_DEV" />
+            <appender-ref ref="CONSOLE_DEV"/>
         </root>
     </springProfile>
 
@@ -24,7 +26,7 @@
         </appender>
 
         <root level="INFO">
-            <appender-ref ref="CONSOLE_PROD" />
+            <appender-ref ref="CONSOLE_PROD"/>
         </root>
     </springProfile>
 </configuration>

@@ -34,8 +34,8 @@ public class TransactionServiceIT extends BaseIntegrationTest {
 
 	@BeforeEach
 	void setUp() {
-		Customer customerA = customerRepository.save(new Customer("Customer A", "customer-a-" + UUID.randomUUID() + "@bank.com"));
-		Customer customerB = customerRepository.save(new Customer("Customer B", "customer-b-" + UUID.randomUUID() + "@bank.com"));
+		Customer customerA = customerRepository.save(new Customer("Customer A", "customer-a-" + UUID.randomUUID() + "@bank.com", "password", com.houcinee.bankapp.enums.Role.USER));
+		Customer customerB = customerRepository.save(new Customer("Customer B", "customer-b-" + UUID.randomUUID() + "@bank.com", "password", com.houcinee.bankapp.enums.Role.USER));
 
 		Account src = accountRepository.save(new Account(1000L, Currency.MAD, customerA));
 		Account dest = accountRepository.save(new Account(1000L, Currency.MAD, customerB));

@@ -11,21 +11,6 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_DB: bank_db
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U postgres -d bank_db"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-
     steps:
     - uses: actions/checkout@v4
     - name: Set up JDK 21
@@ -37,3 +22,5 @@ jobs:
     - name: Build with Maven
       run: mvn -B clean verify
       working-directory: bank-app
+      env:
+        JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
