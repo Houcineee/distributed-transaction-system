@@ -57,7 +57,7 @@ public class TransactionService {
 		}
 
 		if (amount <= 0) {
-			throw new IllegalArgumentException("Balance cannot be negative or zero");
+			throw new IllegalArgumentException("Transfer amount must be greater than zero");
 		}
 	}
 

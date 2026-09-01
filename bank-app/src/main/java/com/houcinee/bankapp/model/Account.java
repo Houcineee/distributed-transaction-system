@@ -47,7 +47,7 @@ public class Account extends BaseEntity {
 
 	public void debit(Long amount) {
 		if (amount <= 0) {
-			throw new IllegalArgumentException("Balance cannot be negative or zero");
+			throw new IllegalArgumentException("Transfer amount must be greater than zero");
 		}
 		if (amount > this.balance) {
 			throw new IllegalArgumentException("Insufficient balance in source account");
