@@ -10,6 +10,7 @@ import org.mockito.Mockito;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
@@ -97,5 +98,21 @@ class AuthControllerTest extends BaseWebMvcTest {
 		mockMvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
 		                                          .content(objectMapper.writeValueAsString(request)))
 		       .andExpect(status().isBadRequest());
+	}
+
+	@Test
+	void givenWrongCredentials_whenLogin_thenReturns401() throws Exception {
+		LoginRequest request = LoginRequest.builder()
+		                                   .email("houcine@test.com")
+		                                   .password("wrongpassword")
+		                                   .build();
+
+		when(authenticationManager.authenticate(any()))
+				.thenThrow(new BadCredentialsException("Bad credentials"));
+
+		mockMvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
+		                                          .content(objectMapper.writeValueAsString(request)))
+		       .andExpect(status().isUnauthorized())
+		       .andExpect(jsonPath("$.message").value("Invalid email or password"));
 	}
 }
