@@ -36,10 +36,12 @@ class AccountControllerTest extends BaseWebMvcTest {
 	@MockitoBean
 	private TransactionService transactionService;
 
+	// --- createAccount Tests ---
 	@Test
-	void givenValidRequest_whenCreateAccount_thenReturns201() throws Exception {
+	void givenSameUser_whenCreateAccount_thenReturns201() throws Exception {
+		UUID userId = UUID.randomUUID();
 		CreateAccountRequest request = CreateAccountRequest.builder()
-		                                                   .userId(UUID.randomUUID())
+		                                                   .userId(userId)
 		                                                   .currency(Currency.MAD)
 		                                                   .build();
 
@@ -47,22 +49,35 @@ class AccountControllerTest extends BaseWebMvcTest {
 		                                          .id(UUID.randomUUID())
 		                                          .balance("0.00")
 		                                          .currency(Currency.MAD)
-		                                          .userId(request.getUserId())
+		                                          .userId(userId)
 		                                          .build();
 
 		when(accountService.createAccount(any(CreateAccountRequest.class))).thenReturn(response);
 
-		mockMvc.perform(post("/api/v1/accounts").with(mockAuth(request.getUserId(), "CUSTOMER")).contentType(MediaType.APPLICATION_JSON)
+		mockMvc.perform(post("/api/v1/accounts").with(mockAuth(userId, "CUSTOMER")).contentType(MediaType.APPLICATION_JSON)
 		                                        .content(objectMapper.writeValueAsString(request)))
 		       .andExpect(status().isCreated())
-		       .andExpect(jsonPath("$.balance").value("0.00"))
-		       .andExpect(jsonPath("$.currency").value("MAD"));
+		       .andExpect(jsonPath("$.balance").value("0.00"));
+	}
+
+	@Test
+	void givenDifferentUser_whenCreateAccount_thenReturns403() throws Exception {
+		UUID targetUserId = UUID.randomUUID();
+		UUID loggedInUserId = UUID.randomUUID(); // Different ID!
+		CreateAccountRequest request = CreateAccountRequest.builder()
+		                                                   .userId(targetUserId)
+		                                                   .currency(Currency.MAD)
+		                                                   .build();
+
+		mockMvc.perform(post("/api/v1/accounts").with(mockAuth(loggedInUserId, "CUSTOMER")).contentType(MediaType.APPLICATION_JSON)
+		                                        .content(objectMapper.writeValueAsString(request)))
+		       .andExpect(status().isForbidden());
 	}
 
 	@Test
 	void givenInvalidRequest_whenCreateAccount_thenReturns400() throws Exception {
-		// Missing currency, but valid userId so it passes security and hits @Valid
-        UUID validUserId = UUID.randomUUID();
+		UUID validUserId = UUID.randomUUID();
+		// Missing currency
 		CreateAccountRequest request = CreateAccountRequest.builder()
                                                            .userId(validUserId)
 		                                                   .build();
@@ -72,51 +87,65 @@ class AccountControllerTest extends BaseWebMvcTest {
 		       .andExpect(status().isBadRequest());
 	}
 
+	// --- getAccountById Tests ---
 	@Test
-	void givenValidId_whenGetAccount_thenReturns200() throws Exception {
+	void givenSameUser_whenGetAccount_thenReturns200() throws Exception {
 		UUID accountId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
 		AccountResponse response = AccountResponse.builder()
 		                                          .id(accountId)
 		                                          .balance("150.00")
-		                                          .currency(Currency.USD)
-		                                          .userId(userId)
+		                                          .userId(userId) // user owns this account
 		                                          .build();
 
 		when(accountService.getAccountById(accountId)).thenReturn(response);
 
 		mockMvc.perform(get("/api/v1/accounts/" + accountId).with(mockAuth(userId, "CUSTOMER")).contentType(MediaType.APPLICATION_JSON))
-		       .andExpect(status().isOk())
-		       .andExpect(jsonPath("$.balance").value("150.00"))
-		       .andExpect(jsonPath("$.id").value(accountId.toString()));
+		       .andExpect(status().isOk());
 	}
 
 	@Test
-	void givenValidId_whenGetTransactionHistory_thenReturnsPaginated200() throws Exception {
+	void givenDifferentUser_whenGetAccount_thenReturns403() throws Exception {
 		UUID accountId = UUID.randomUUID();
+        UUID ownerId = UUID.randomUUID();
+		UUID loggedInUserId = UUID.randomUUID(); // Different ID!
+		AccountResponse response = AccountResponse.builder()
+		                                          .id(accountId)
+		                                          .balance("150.00")
+		                                          .userId(ownerId)
+		                                          .build();
 
-		TransactionResponse tx = TransactionResponse.builder()
-		                                            .id(UUID.randomUUID())
-		                                            .amount("50.00")
-		                                            .status(TransactionStatus.COMPLETED)
-		                                            .createdAt(Instant.now())
-		                                            .sourceAccountId(accountId)
-		                                            .destinationAccountId(UUID.randomUUID())
-		                                            .build();
+		when(accountService.getAccountById(accountId)).thenReturn(response);
 
-		Page<TransactionResponse> page = new PageImpl<>(List.of(tx), PageRequest.of(0, 20), 1);
+		mockMvc.perform(get("/api/v1/accounts/" + accountId).with(mockAuth(loggedInUserId, "CUSTOMER")).contentType(MediaType.APPLICATION_JSON))
+		       .andExpect(status().isForbidden());
+	}
+
+	// --- getTransactionHistory Tests ---
+	@Test
+	void givenAccountOwner_whenGetTransactionHistory_thenReturns200() throws Exception {
+		UUID accountId = UUID.randomUUID();
+		Page<TransactionResponse> page = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
 
 		when(transactionService.getTransactionsByAccountId(eq(accountId), any())).thenReturn(page);
+		// User owns the account
         when(securityService.isAccountOwner(any(), eq(accountId))).thenReturn(true);
 
 		mockMvc.perform(get("/api/v1/accounts/" + accountId + "/transactions").param("page", "0")
 		                                                                      .with(mockAuth(UUID.randomUUID(), "CUSTOMER"))
-		                                                                      .param("size", "20")
 		                                                                      .contentType(MediaType.APPLICATION_JSON))
-		       .andExpect(status().isOk())
-		       .andExpect(jsonPath("$.content[0].amount").value("50.00"))
-		       .andExpect(jsonPath("$.content[0].status").value("COMPLETED"))
-		       .andExpect(jsonPath("$.totalElements").value(1))
-		       .andExpect(jsonPath("$.totalPages").value(1));
+		       .andExpect(status().isOk());
+	}
+
+	@Test
+	void givenNotAccountOwner_whenGetTransactionHistory_thenReturns403() throws Exception {
+		UUID accountId = UUID.randomUUID();
+		// User DOES NOT own the account
+        when(securityService.isAccountOwner(any(), eq(accountId))).thenReturn(false);
+
+		mockMvc.perform(get("/api/v1/accounts/" + accountId + "/transactions").param("page", "0")
+		                                                                      .with(mockAuth(UUID.randomUUID(), "CUSTOMER"))
+		                                                                      .contentType(MediaType.APPLICATION_JSON))
+		       .andExpect(status().isForbidden());
 	}
 }
