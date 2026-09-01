@@ -46,5 +46,9 @@ public class AccountController {
 		return ResponseEntity.status(HttpStatus.OK).body(transactionService.getTransactionsByAccountId(id , pageable)) ;
 	}
 
-
+	@PreAuthorize("hasRole('ADMIN')")
+	@GetMapping("/api/v1/admin/accounts")
+	public ResponseEntity<Page<AccountResponse>> getAllAccounts(Pageable pageable) {
+		return ResponseEntity.status(HttpStatus.OK).body(accountService.getAllAccounts(pageable));
+	}
 }

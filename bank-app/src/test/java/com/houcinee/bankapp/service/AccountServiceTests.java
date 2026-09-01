@@ -13,6 +13,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
@@ -121,5 +125,25 @@ public class AccountServiceTests {
 		assertThrows(ResourceNotFoundException.class, () -> {
 			accountService.getAccountsByUserId(id);
 		});
+	}
+
+	@Test
+	public void givenPageable_whenGetAllAccounts_thenReturnsPagedAccountResponses() {
+		Pageable pageable = PageRequest.of(0, 10);
+		
+		AppUser appUser = new AppUser("test", "test@test.com", "password", Role.ADMIN);
+		ReflectionTestUtils.setField(appUser, "id", UUID.randomUUID());
+		
+		Account account = new Account(1000L, Currency.MAD, appUser);
+		ReflectionTestUtils.setField(account, "id", UUID.randomUUID());
+
+		Page<Account> pagedAccounts = new PageImpl<>(List.of(account));
+
+		when(accountRepository.findAll(pageable)).thenReturn(pagedAccounts);
+
+		Page<AccountResponse> responsePage = accountService.getAllAccounts(pageable);
+
+		assertEquals(1, responsePage.getTotalElements());
+		assertEquals("10.00", responsePage.getContent().getFirst().getBalance());
 	}
 }

@@ -182,4 +182,24 @@ class AccountControllerTest extends BaseWebMvcTest {
 		                                                                      .contentType(MediaType.APPLICATION_JSON))
 		       .andExpect(status().isOk());
 	}
+
+	// --- Admin getAllAccounts Tests ---
+	@Test
+	void givenAdmin_whenGetAllAccounts_thenReturns200() throws Exception {
+		Page<AccountResponse> page = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
+		when(accountService.getAllAccounts(any())).thenReturn(page);
+
+		mockMvc.perform(get("/api/v1/admin/accounts").param("page", "0")
+		                                             .with(mockAuth(UUID.randomUUID(), "ADMIN"))
+		                                             .contentType(MediaType.APPLICATION_JSON))
+		       .andExpect(status().isOk());
+	}
+
+	@Test
+	void givenCustomer_whenGetAllAccounts_thenReturns403() throws Exception {
+		mockMvc.perform(get("/api/v1/admin/accounts").param("page", "0")
+		                                             .with(mockAuth(UUID.randomUUID(), "CUSTOMER"))
+		                                             .contentType(MediaType.APPLICATION_JSON))
+		       .andExpect(status().isForbidden());
+	}
 }

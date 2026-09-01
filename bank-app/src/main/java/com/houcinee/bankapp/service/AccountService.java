@@ -9,6 +9,8 @@ import com.houcinee.bankapp.model.AppUser;
 import com.houcinee.bankapp.repository.AccountRepository;
 import com.houcinee.bankapp.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -56,7 +58,11 @@ public class AccountService {
 		return accountsList.stream()
 		                   .map(this::toAccountResponse)
 		                   .toList() ;
+	}
 
+	public Page<AccountResponse> getAllAccounts(Pageable pageable) {
+		log.info("Fetching all accounts with pagination");
+		return accountRepository.findAll(pageable).map(this::toAccountResponse);
 	}
 
 	// Helper Method
