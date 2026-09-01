@@ -145,6 +145,9 @@
                         <param>**.*IT</param>
                         <param>**.*IntegrationTest</param>
                     </excludedTestClasses>
+                    <excludedClasses>
+                        <param>com.houcinee.bankapp.config.*</param>
+                    </excludedClasses>
                 </configuration>
 
                 <dependencies>
@@ -159,6 +162,12 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.13</version>
+
+                <configuration>
+                    <excludes>
+                        <exclude>com/houcinee/bankapp/config/**</exclude>
+                    </excludes>
+                </configuration>
 
                 <executions>
                     <execution>
