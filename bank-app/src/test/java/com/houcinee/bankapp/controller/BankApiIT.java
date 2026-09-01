@@ -87,7 +87,7 @@ public class BankApiIT extends BaseIntegrationTest {
 		mockMvc.perform(post("/api/v1/transfers").header("Authorization", "Bearer " + tokenA)
 		                                         .contentType(MediaType.APPLICATION_JSON)
 		                                         .content(objectMapper.writeValueAsString(transferReq)))
-		       .andExpect(status().isOk())
+		       .andExpect(status().isCreated())
 		       .andExpect(jsonPath("$.amount").value("50.00"))
 		       .andExpect(jsonPath("$.status").value("COMPLETED"));
 

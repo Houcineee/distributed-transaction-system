@@ -13,7 +13,6 @@ import java.time.Instant;
 
 @MappedSuperclass
 @Getter
-@Setter
 @EntityListeners(AuditingEntityListener.class)
 public abstract class BaseEntity {
 

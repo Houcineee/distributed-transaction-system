@@ -14,7 +14,6 @@ import java.util.UUID;
 @Entity
 @NoArgsConstructor
 @Getter
-@Setter
 @Table(name = "transactions")
 public class Transaction extends BaseEntity {
 	@Id

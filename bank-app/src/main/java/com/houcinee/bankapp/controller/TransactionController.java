@@ -10,9 +10,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequestMapping("/api/v1/transfers")
 public class TransactionController {
 	private final TransactionService transactionService ;
 
@@ -21,14 +23,12 @@ public class TransactionController {
 	}
 
 	@PreAuthorize("hasRole('ADMIN') or @securityService.isAccountOwner(authentication, #transactionRequest.srcAccount)")
-	@PostMapping("/api/v1/transfers")
+	@PostMapping
 	public ResponseEntity<TransactionResponse> transferMoney(@RequestBody @Valid @P("transactionRequest") TransactionRequest  transactionRequest){
 		TransactionResponse transaction = transactionService.transferMoney(transactionRequest.getSrcAccount(),
 				transactionRequest.getDestAccount(),
 				transactionRequest.getAmount());
-		return ResponseEntity.status(HttpStatus.OK).body(transaction) ;
+		return ResponseEntity.status(HttpStatus.CREATED).body(transaction) ;
 	}
-
-
 
 }
