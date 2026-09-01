@@ -78,4 +78,30 @@ class UserControllerTest extends BaseWebMvcTest {
 		                                                                  .contentType(MediaType.APPLICATION_JSON))
 		       .andExpect(status().isForbidden());
 	}
+
+	// --- ADMIN Override Tests ---
+	@Test
+	void givenAdmin_whenGetUserById_thenReturns200() throws Exception {
+		UUID targetUserId = UUID.randomUUID(); // Different user
+		UserResponse res = UserResponse.builder().name("test").email("test@test.com").id(targetUserId).build();
+
+		when(userService.getUserById(targetUserId)).thenReturn(res);
+
+        // Authenticated as an ADMIN (completely different ID)
+		mockMvc.perform(get("/api/v1/users/" + targetUserId).with(mockAuth(UUID.randomUUID(), "ADMIN"))
+		                                                .contentType(MediaType.APPLICATION_JSON))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("$.id").value(targetUserId.toString()));
+	}
+
+	@Test
+	void givenAdmin_whenGetAccountsByUserId_thenReturns200() throws Exception {
+		UUID targetUserId = UUID.randomUUID(); // Different user
+		when(accountService.getAccountsByUserId(targetUserId)).thenReturn(List.of());
+
+        // Authenticated as an ADMIN
+		mockMvc.perform(get("/api/v1/users/" + targetUserId + "/accounts").with(mockAuth(UUID.randomUUID(), "ADMIN"))
+		                                                            .contentType(MediaType.APPLICATION_JSON))
+		       .andExpect(status().isOk());
+	}
 }

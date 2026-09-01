@@ -148,4 +148,38 @@ class AccountControllerTest extends BaseWebMvcTest {
 		                                                                      .contentType(MediaType.APPLICATION_JSON))
 		       .andExpect(status().isForbidden());
 	}
+
+	// --- ADMIN Override Tests ---
+	@Test
+	void givenAdmin_whenGetAccount_thenReturns200() throws Exception {
+		UUID accountId = UUID.randomUUID();
+        UUID ownerId = UUID.randomUUID(); // Some random user owns it
+		AccountResponse response = AccountResponse.builder()
+		                                          .id(accountId)
+		                                          .balance("150.00")
+		                                          .userId(ownerId)
+		                                          .build();
+
+		when(accountService.getAccountById(accountId)).thenReturn(response);
+
+        // Admin does not own the account, but shouldn't matter!
+		mockMvc.perform(get("/api/v1/accounts/" + accountId).with(mockAuth(UUID.randomUUID(), "ADMIN")).contentType(MediaType.APPLICATION_JSON))
+		       .andExpect(status().isOk());
+	}
+
+	@Test
+	void givenAdmin_whenGetTransactionHistory_thenReturns200() throws Exception {
+		UUID accountId = UUID.randomUUID();
+		Page<TransactionResponse> page = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
+
+		when(transactionService.getTransactionsByAccountId(eq(accountId), any())).thenReturn(page);
+		
+        // Admin DOES NOT own the account (returns false), but should bypass it
+        when(securityService.isAccountOwner(any(), eq(accountId))).thenReturn(false);
+
+		mockMvc.perform(get("/api/v1/accounts/" + accountId + "/transactions").param("page", "0")
+		                                                                      .with(mockAuth(UUID.randomUUID(), "ADMIN"))
+		                                                                      .contentType(MediaType.APPLICATION_JSON))
+		       .andExpect(status().isOk());
+	}
 }

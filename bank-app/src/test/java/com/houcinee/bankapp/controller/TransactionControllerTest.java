@@ -97,4 +97,37 @@ class TransactionControllerTest extends BaseWebMvcTest {
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
     }
+
+    // --- ADMIN Override Tests ---
+    @Test
+    void givenAdmin_whenTransferMoney_thenReturns200() throws Exception {
+        UUID srcAccount = UUID.randomUUID();
+        UUID destAccount = UUID.randomUUID();
+        
+        TransactionRequest request = TransactionRequest.builder()
+                .srcAccount(srcAccount)
+                .destAccount(destAccount)
+                .amount(5000L)
+                .build();
+
+        TransactionResponse response = TransactionResponse.builder()
+                .id(UUID.randomUUID())
+                .amount("50.00")
+                .status(TransactionStatus.COMPLETED)
+                .createdAt(Instant.now())
+                .sourceAccountId(srcAccount)
+                .destinationAccountId(destAccount)
+                .build();
+
+        when(transactionService.transferMoney(eq(srcAccount), eq(destAccount), eq(5000L))).thenReturn(response);
+        
+        // SecurityService returns false (Admin does not own the account), but Admin role should override
+        when(securityService.isAccountOwner(any(), eq(srcAccount))).thenReturn(false);
+
+        mockMvc.perform(post("/api/v1/transfers")
+                .with(mockAuth(UUID.randomUUID(), "ADMIN"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+    }
 }
