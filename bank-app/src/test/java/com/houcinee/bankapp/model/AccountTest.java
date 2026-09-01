@@ -45,7 +45,7 @@ public class AccountTest {
 			account.debit(-10L);
 		});
 
-		assertEquals("Balance cannot be negative or zero", exception.getMessage());
+		assertEquals("Transfer amount must be greater than zero", exception.getMessage());
 	}
 
 	@Test
@@ -56,7 +56,7 @@ public class AccountTest {
 			account.debit(0L);
 		});
 
-		assertEquals("Balance cannot be negative or zero", exception.getMessage());
+		assertEquals("Transfer amount must be greater than zero", exception.getMessage());
 	}
 
 	@Test
