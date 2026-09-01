@@ -7,8 +7,9 @@ import com.houcinee.bankapp.dto.RegisterRequest;
 import com.houcinee.bankapp.dto.TransactionRequest;
 import com.houcinee.bankapp.enums.Currency;
 import com.houcinee.bankapp.model.Account;
+import com.houcinee.bankapp.model.AppUser;
 import com.houcinee.bankapp.repository.AccountRepository;
-import com.houcinee.bankapp.repository.CustomerRepository;
+import com.houcinee.bankapp.repository.UserRepository;
 import com.houcinee.bankapp.repository.TransactionRepository;
 import com.houcinee.bankapp.service.BaseIntegrationTest;
 import com.jayway.jsonpath.JsonPath;
@@ -40,7 +41,7 @@ public class BankApiIT extends BaseIntegrationTest {
 	private AccountRepository accountRepository;
 
 	@Autowired
-	private CustomerRepository customerRepository;
+	private UserRepository userRepository;
 
 	@Autowired
 	private TransactionRepository transactionRepository;
@@ -49,55 +50,58 @@ public class BankApiIT extends BaseIntegrationTest {
 	void tearDown() {
 		transactionRepository.deleteAllInBatch();
 		accountRepository.deleteAllInBatch();
-		customerRepository.deleteAllInBatch();
+		userRepository.deleteAllInBatch();
 	}
 
 	@Test
-	void goldenPath_fullEndToEndTransfer() throws Exception {
-		// 1. Create Customer A
-		String customerAId = createCustomer("Alice", "alice@bank.com");
+	void givenFundedSourceAccount_whenTransfer_thenCompletesAndUpdatesBalances() throws Exception {
+		// 1. Create AppUser A
+		String userAId = createUser("Alice", "alice@bank.com");
 
-		// 2. Create Customer B
-		String customerBId = createCustomer("Bob", "bob@bank.com");
+		// 2. Create AppUser B
+		String userBId = createUser("Bob", "bob@bank.com");
 
-		// 3. Login to get token (using Customer A's credentials)
-		String token = login("alice@bank.com", "secure123");
+		// 3. Login to get token (using AppUser A's credentials)
+		String tokenA = login("alice@bank.com", "secure123");
+		
+		// 4. Login to get token (using AppUser B's credentials)
+		String tokenB = login("bob@bank.com", "secure123");
 
-		// 4. Create Accounts
-		String accountAId = createAccount(customerAId, token);
-		String accountBId = createAccount(customerBId, token);
+		// 5. Create Accounts (using respective tokens)
+		String accountAId = createAccount(userAId, tokenA);
+		String accountBId = createAccount(userBId, tokenB);
 
-		// 5. Backdoor: Give Account A $100.00 (10000 cents) so they can transfer
+		// 6. Backdoor: Give Account A $100.00 (10000 cents) so they can transfer
 		Account accountA = accountRepository.findById(UUID.fromString(accountAId))
 		                                    .orElseThrow();
 		setField(accountA, "balance", 10000L);
 		accountRepository.save(accountA);
 
-		// 6. Transfer $50.00
+		// 7. Transfer $50.00 from A to B
 		TransactionRequest transferReq = TransactionRequest.builder()
 		                                                   .srcAccount(UUID.fromString(accountAId))
 		                                                   .destAccount(UUID.fromString(accountBId))
 		                                                   .amount(5000L) // $50.00
 		                                                   .build();
 
-		mockMvc.perform(post("/api/v1/transfers").header("Authorization", "Bearer " + token)
+		mockMvc.perform(post("/api/v1/transfers").header("Authorization", "Bearer " + tokenA)
 		                                         .contentType(MediaType.APPLICATION_JSON)
 		                                         .content(objectMapper.writeValueAsString(transferReq)))
-		       .andExpect(status().isOk())
+		       .andExpect(status().isCreated())
 		       .andExpect(jsonPath("$.amount").value("50.00"))
 		       .andExpect(jsonPath("$.status").value("COMPLETED"));
 
-		// 7. Verify Balances via API
-		mockMvc.perform(get("/api/v1/accounts/" + accountAId).header("Authorization", "Bearer " + token))
+		// 8. Verify Balances via API
+		mockMvc.perform(get("/api/v1/accounts/" + accountAId).header("Authorization", "Bearer " + tokenA))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("$.balance").value("50.00"));
 
-		mockMvc.perform(get("/api/v1/accounts/" + accountBId).header("Authorization", "Bearer " + token))
+		mockMvc.perform(get("/api/v1/accounts/" + accountBId).header("Authorization", "Bearer " + tokenB))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("$.balance").value("50.00"));
 
-		// 8. Verify Transaction History
-		mockMvc.perform(get("/api/v1/accounts/" + accountAId + "/transactions?page=0&size=10").header("Authorization", "Bearer " + token))
+		// 9. Verify Transaction History
+		mockMvc.perform(get("/api/v1/accounts/" + accountAId + "/transactions?page=0&size=10").header("Authorization", "Bearer " + tokenA))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("$.totalElements").value(1))
 		       .andExpect(jsonPath("$.content[0].amount").value("50.00"))
@@ -105,15 +109,16 @@ public class BankApiIT extends BaseIntegrationTest {
 	}
 
 	@Test
-	void rollbackPath_insufficientFunds() throws Exception {
-		// 1. Create Customers & Accounts
-		String customerCId = createCustomer("Charlie", "charlie@bank.com");
-		String customerDId = createCustomer("Diana", "diana@bank.com");
+	void givenInsufficientFunds_whenTransfer_thenRollsBackAndLogsFailure() throws Exception {
+		// 1. Create users and accounts
+		String userCId = createUser("Charlie", "charlie@bank.com");
+		String userDId = createUser("Diana", "diana@bank.com");
 
-		String token = login("charlie@bank.com", "secure123");
+		String tokenC = login("charlie@bank.com", "secure123");
+		String tokenD = login("diana@bank.com", "secure123");
 
-		String accountCId = createAccount(customerCId, token); // Balance starts at 0
-		String accountDId = createAccount(customerDId, token); // Balance starts at 0
+		String accountCId = createAccount(userCId, tokenC); // Balance starts at 0
+		String accountDId = createAccount(userDId, tokenD); // Balance starts at 0
 
 		// 2. Attempt to transfer $50.00 when balance is 0
 		TransactionRequest transferReq = TransactionRequest.builder()
@@ -122,26 +127,26 @@ public class BankApiIT extends BaseIntegrationTest {
 		                                                   .amount(5000L) // $50.00
 		                                                   .build();
 
-		mockMvc.perform(post("/api/v1/transfers").header("Authorization", "Bearer " + token)
+		mockMvc.perform(post("/api/v1/transfers").header("Authorization", "Bearer " + tokenC)
 		                                         .contentType(MediaType.APPLICATION_JSON)
 		                                         .content(objectMapper.writeValueAsString(transferReq)))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(jsonPath("$.message").value("Insufficient balance in source account"));
 
 		// 3. Verify Balances remained 0 (Rolled back)
-		mockMvc.perform(get("/api/v1/accounts/" + accountCId).header("Authorization", "Bearer " + token))
+		mockMvc.perform(get("/api/v1/accounts/" + accountCId).header("Authorization", "Bearer " + tokenC))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("$.balance").value("0.00"));
 
 		// 4. Verify FAILED transaction was logged
-		mockMvc.perform(get("/api/v1/accounts/" + accountCId + "/transactions").header("Authorization", "Bearer " + token))
+		mockMvc.perform(get("/api/v1/accounts/" + accountCId + "/transactions").header("Authorization", "Bearer " + tokenC))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("$.totalElements").value(1))
 		       .andExpect(jsonPath("$.content[0].status").value("FAILED"));
 	}
 
 	@Test
-	void registration_hashesPasswordInDatabase() throws Exception {
+	void givenRegistrationRequest_whenRegister_thenStoresHashedPassword() throws Exception {
 		String rawPassword = "superSecretPassword!";
 		RegisterRequest req = RegisterRequest.builder()
 		                                     .name("Eve")
@@ -154,23 +159,23 @@ public class BankApiIT extends BaseIntegrationTest {
 		                          .andExpect(status().isCreated())
 		                          .andReturn();
 
-		String customerIdStr = JsonPath.read(result.getResponse()
+		String userIdStr = JsonPath.read(result.getResponse()
 		                                           .getContentAsString(), "$.id");
-		UUID customerId = UUID.fromString(customerIdStr);
+		UUID userId = UUID.fromString(userIdStr);
 
-		com.houcinee.bankapp.model.Customer savedCustomer = customerRepository.findById(customerId)
-		                                                                      .orElseThrow();
+		AppUser savedAppUser = userRepository.findById(userId)
+		                                     .orElseThrow();
 
 		// Assert that the database value is NOT the raw password
-		org.junit.jupiter.api.Assertions.assertNotEquals(rawPassword, savedCustomer.getPassword());
+		org.junit.jupiter.api.Assertions.assertNotEquals(rawPassword, savedAppUser.getPassword());
 
 		// Bcrypt hashes start with $2a$, $2b$, or $2y$
-		org.junit.jupiter.api.Assertions.assertTrue(savedCustomer.getPassword()
-		                                                         .startsWith("$2a$"));
+		org.junit.jupiter.api.Assertions.assertTrue(savedAppUser.getPassword()
+		                                                        .startsWith("$2a$"));
 	}
 
 	// --- Helpers ---
-	private String createCustomer(String name, String email) throws Exception {
+	private String createUser(String name, String email) throws Exception {
 		RegisterRequest req = RegisterRequest.builder()
 		                                     .name(name)
 		                                     .email(email)
@@ -197,9 +202,9 @@ public class BankApiIT extends BaseIntegrationTest {
 		                           .getContentAsString(), "$.token");
 	}
 
-	private String createAccount(String customerId, String token) throws Exception {
+	private String createAccount(String userId, String token) throws Exception {
 		CreateAccountRequest req = CreateAccountRequest.builder()
-		                                               .customerId(UUID.fromString(customerId))
+		                                               .userId(UUID.fromString(userId))
 		                                               .currency(Currency.MAD)
 		                                               .build();
 		MvcResult result = mockMvc.perform(post("/api/v1/accounts").header("Authorization", "Bearer " + token)

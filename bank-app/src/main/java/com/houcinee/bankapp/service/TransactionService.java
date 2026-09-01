@@ -57,7 +57,7 @@ public class TransactionService {
 		}
 
 		if (amount <= 0) {
-			throw new IllegalArgumentException("Balance cannot be negative or zero");
+			throw new IllegalArgumentException("Transfer amount must be greater than zero");
 		}
 	}
 
@@ -77,9 +77,9 @@ public class TransactionService {
 		UUID secondId = id1.compareTo(id2) < 0 ? id2 : id1;
 
 		Account first = accountRepository.findAccountById(firstId)
-		                                 .orElseThrow(() -> new ResourceNotFoundException("Account not found" + firstId));
+		                                 .orElseThrow(() -> new ResourceNotFoundException("Account not found: " + firstId));
 		Account second = accountRepository.findAccountById(secondId)
-		                                  .orElseThrow(() -> new ResourceNotFoundException("Account not found" + secondId));
+		                                  .orElseThrow(() -> new ResourceNotFoundException("Account not found: " + secondId));
 
 		return new Account[]{first, second};
 	}

@@ -1,6 +1,6 @@
 package com.houcinee.bankapp.enums;
 
 public enum Role {
-	USER,
+	CUSTOMER,
 	ADMIN
 }

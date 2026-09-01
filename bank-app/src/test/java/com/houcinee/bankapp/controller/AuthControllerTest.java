@@ -1,17 +1,18 @@
 package com.houcinee.bankapp.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.houcinee.bankapp.dto.LoginRequest;
 import com.houcinee.bankapp.dto.RegisterRequest;
-import com.houcinee.bankapp.dto.CustomerResponse;
+import com.houcinee.bankapp.dto.UserResponse;
+import com.houcinee.bankapp.model.AppUser;
 import com.houcinee.bankapp.service.AuthService;
-import com.houcinee.bankapp.service.JwtService;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.mockito.Mockito;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.Authentication;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -32,14 +33,14 @@ class AuthControllerTest extends BaseWebMvcTest {
 	private AuthenticationManager authenticationManager;
 
 	@Test
-	void givenValidRequest_whenCreateCustomer_thenReturns201() throws Exception {
+	void givenValidRegistrationRequest_whenRegister_thenReturns201() throws Exception {
 		RegisterRequest request = RegisterRequest.builder()
 		                                         .name("Houcine")
 		                                         .email("houcine@test.com")
 		                                         .password("secure123")
 		                                         .build();
 
-		CustomerResponse response = CustomerResponse.builder()
+		UserResponse response = UserResponse.builder()
 		                                            .id(UUID.randomUUID())
 		                                            .name("Houcine")
 		                                            .email("houcine@test.com")
@@ -56,7 +57,7 @@ class AuthControllerTest extends BaseWebMvcTest {
 	}
 
 	@Test
-	void givenInvalidRequest_whenCreateCustomer_thenReturns400() throws Exception {
+	void givenInvalidRegistrationRequest_whenRegister_thenReturns400() throws Exception {
 		RegisterRequest request = RegisterRequest.builder()
 		                                         .name("")
 		                                         .email("not-an-email")
@@ -66,5 +67,52 @@ class AuthControllerTest extends BaseWebMvcTest {
 		mockMvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON)
 		                                             .content(objectMapper.writeValueAsString(request)))
 		       .andExpect(status().isBadRequest());
+	}
+
+	@Test
+	void givenValidLoginRequest_whenLogin_thenReturns200AndToken() throws Exception {
+		LoginRequest request = LoginRequest.builder()
+		                                   .email("houcine@test.com")
+		                                   .password("secure123")
+		                                   .build();
+
+		Authentication mockAuth = Mockito.mock(Authentication.class);
+		AppUser mockUser = new AppUser();
+		when(authenticationManager.authenticate(any())).thenReturn(mockAuth);
+		when(mockAuth.getPrincipal()).thenReturn(mockUser);
+		when(jwtService.generateToken(mockUser)).thenReturn("fake-jwt-token");
+
+		mockMvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
+		                                          .content(objectMapper.writeValueAsString(request)))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("$.token").value("fake-jwt-token"));
+	}
+
+	@Test
+	void givenInvalidLoginRequest_whenLogin_thenpageableReturns400() throws Exception {
+		LoginRequest request = LoginRequest.builder()
+		                                   .email("not-an-email")
+		                                   .password("")
+		                                   .build();
+
+		mockMvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
+		                                          .content(objectMapper.writeValueAsString(request)))
+		       .andExpect(status().isBadRequest());
+	}
+
+	@Test
+	void givenWrongCredentials_whenLogin_thenReturns401() throws Exception {
+		LoginRequest request = LoginRequest.builder()
+		                                   .email("houcine@test.com")
+		                                   .password("wrongpassword")
+		                                   .build();
+
+		when(authenticationManager.authenticate(any()))
+				.thenThrow(new BadCredentialsException("Bad credentials"));
+
+		mockMvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
+		                                          .content(objectMapper.writeValueAsString(request)))
+		       .andExpect(status().isUnauthorized())
+		       .andExpect(jsonPath("$.message").value("Invalid email or password"));
 	}
 }

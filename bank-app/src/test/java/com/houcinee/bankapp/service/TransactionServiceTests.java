@@ -1,19 +1,26 @@
 package com.houcinee.bankapp.service;
 
 
+import com.houcinee.bankapp.dto.TransactionResponse;
 import com.houcinee.bankapp.enums.Currency;
 import com.houcinee.bankapp.exception.ResourceNotFoundException;
 import com.houcinee.bankapp.model.Account;
+import com.houcinee.bankapp.model.AppUser;
 import com.houcinee.bankapp.model.Transaction;
-import com.houcinee.bankapp.model.Customer;
 import com.houcinee.bankapp.repository.AccountRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -34,20 +41,23 @@ public class TransactionServiceTests {
 	@Mock
 	private TransactionLoggerService transactionLoggerService;
 
+	@Mock
+	private com.houcinee.bankapp.repository.TransactionRepository transactionRepository;
+
 	@InjectMocks
 	private TransactionService transactionService;
 
 	private Account createAccount(long leastSigBits, long balance) {
-		Customer customer = new Customer("Test Customer", "test@bank.com", "password", com.houcinee.bankapp.enums.Role.USER);
-		ReflectionTestUtils.setField(customer, "id", UUID.randomUUID());
+		AppUser appUser = new AppUser("Test AppUser", "test@bank.com", "password", com.houcinee.bankapp.enums.Role.CUSTOMER);
+		ReflectionTestUtils.setField(appUser, "id", UUID.randomUUID());
 
-		Account account = new Account(balance, Currency.MAD, customer);
+		Account account = new Account(balance, Currency.MAD, appUser);
 		ReflectionTestUtils.setField(account, "id", new UUID(0L, leastSigBits));
 		return account;
 	}
 
 	@Test
-	void givenValidAccounts_whenTransferFunds_thenSuccessfulAndLogged() {
+	void givenValidAccounts_whenTransferFunds_thenCompletesAndLogsTransaction() {
 		Account srcAccount = createAccount(1L, 100L);
 		Account destAccount = createAccount(2L, 50L);
 
@@ -87,7 +97,7 @@ public class TransactionServiceTests {
 			transactionService.transferMoney(srcAccount.getId(), destAccount.getId(), -10L);
 		});
 
-		assertEquals("Balance cannot be negative or zero", exception.getMessage());
+		assertEquals("Transfer amount must be greater than zero", exception.getMessage());
 	}
 
 	@Test
@@ -101,11 +111,11 @@ public class TransactionServiceTests {
 			transactionService.transferMoney(srcUUID, destUUID, 10L);
 		});
 
-		assertEquals("Account not found" + srcUUID, exception.getMessage());
+		assertEquals("Account not found: " + srcUUID, exception.getMessage());
 	}
 
 	@Test
-	void givenInsufficientFunds_whenTransferFunds_thenThrowsExceptionAndLogsFailed() {
+	void givenInsufficientFunds_whenTransferFunds_thenThrowsIllegalArgumentExceptionAndLogsFailure() {
 		Account srcAccount = createAccount(1L, 5L);
 		Account destAccount = createAccount(2L, 50L);
 
@@ -119,5 +129,59 @@ public class TransactionServiceTests {
 		assertEquals("Insufficient balance in source account", exception.getMessage());
 
 		verify(transactionLoggerService).saveTransaction(10L, srcAccount, destAccount, FAILED);
+	}
+
+	@Test
+	void givenReverseUUIDOrder_whenTransferFunds_thenCompletesSuccessfully() {
+		// id1 > id2
+		Account srcAccount = createAccount(2L, 100L); // 2L is greater than 1L
+		Account destAccount = createAccount(1L, 50L);
+
+		Transaction dummyTransaction = new Transaction(10L, srcAccount, destAccount, COMPLETED);
+		ReflectionTestUtils.setField(dummyTransaction, "id", UUID.randomUUID());
+
+		when(accountRepository.findAccountById(srcAccount.getId())).thenReturn(Optional.of(srcAccount));
+		when(accountRepository.findAccountById(destAccount.getId())).thenReturn(Optional.of(destAccount));
+		when(transactionLoggerService.saveTransaction(10L, srcAccount, destAccount, COMPLETED)).thenReturn(dummyTransaction);
+
+		transactionService.transferMoney(srcAccount.getId(), destAccount.getId(), 10L);
+
+		assertEquals(90L, srcAccount.getBalance());
+		assertEquals(60L, destAccount.getBalance());
+		verify(transactionLoggerService).saveTransaction(10L, srcAccount, destAccount, COMPLETED);
+	}
+
+	@Test
+	void givenValidAccountId_whenGetTransactions_thenReturnsPaginatedResponses() {
+		UUID accountId = UUID.randomUUID();
+		Pageable pageable = PageRequest.of(0, 10);
+		
+		Account srcAccount = createAccount(1L, 100L);
+		Account destAccount = createAccount(2L, 50L);
+		Transaction tx = new Transaction(10L, srcAccount, destAccount, COMPLETED);
+		ReflectionTestUtils.setField(tx, "id", UUID.randomUUID());
+		ReflectionTestUtils.setField(tx, "createdAt", Instant.now());
+
+		Page<Transaction> page = new PageImpl<>(List.of(tx));
+
+		when(accountRepository.existsById(accountId)).thenReturn(true);
+		when(transactionRepository.findAccountTransactions(accountId, pageable)).thenReturn(page);
+
+		Page<TransactionResponse> responsePage = transactionService.getTransactionsByAccountId(accountId, pageable);
+
+		assertEquals(1, responsePage.getTotalElements());
+		assertEquals("0.10", responsePage.getContent().getFirst().getAmount());
+	}
+
+	@Test
+	void givenInvalidAccountId_whenGetTransactions_thenThrowsResourceNotFoundException() {
+		UUID accountId = UUID.randomUUID();
+		Pageable pageable = PageRequest.of(0, 10);
+
+		when(accountRepository.existsById(accountId)).thenReturn(false);
+
+		assertThrows(ResourceNotFoundException.class, () -> {
+			transactionService.getTransactionsByAccountId(accountId, pageable);
+		});
 	}
 }

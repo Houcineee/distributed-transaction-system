@@ -129,6 +129,63 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.pitest</groupId>
+                <artifactId>pitest-maven</artifactId>
+                <version>1.21.0</version>
+
+                <configuration>
+                    <targetClasses>
+                        <param>com.houcinee.bankapp.*</param>
+                    </targetClasses>
+                    <targetTests>
+                        <param>*Test</param>
+                        <param>*Tests</param>
+                    </targetTests>
+                    <excludedTestClasses>
+                        <param>**.*IT</param>
+                        <param>**.*IntegrationTest</param>
+                    </excludedTestClasses>
+                    <excludedClasses>
+                        <param>com.houcinee.bankapp.config.*</param>
+                    </excludedClasses>
+                </configuration>
+
+                <dependencies>
+                    <dependency>
+                        <groupId>org.pitest</groupId>
+                        <artifactId>pitest-junit5-plugin</artifactId>
+                        <version>1.2.3</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.13</version>
+
+                <configuration>
+                    <excludes>
+                        <exclude>com/houcinee/bankapp/config/**</exclude>
+                    </excludes>
+                </configuration>
+
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>

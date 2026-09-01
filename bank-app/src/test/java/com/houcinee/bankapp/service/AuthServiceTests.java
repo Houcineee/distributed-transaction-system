@@ -1,11 +1,10 @@
 package com.houcinee.bankapp.service;
 
-import com.houcinee.bankapp.dto.CustomerResponse;
+import com.houcinee.bankapp.dto.UserResponse;
 import com.houcinee.bankapp.dto.RegisterRequest;
 import com.houcinee.bankapp.enums.Role;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -23,7 +22,7 @@ import static org.mockito.Mockito.when;
 public class AuthServiceTests {
 
     @Mock
-    private CustomerService customerService;
+    private UserService userService;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -32,7 +31,7 @@ public class AuthServiceTests {
     private AuthService authService;
 
     @Test
-    public void givenValidRequest_whenRegister_thenHashesPasswordAndCreatesCustomer() {
+    public void givenValidRegistrationRequest_whenRegister_thenHashesPasswordAndCreatesUser() {
         // Arrange
         String email = "test@test.com";
         String name = "test";
@@ -45,21 +44,21 @@ public class AuthServiceTests {
                 .password(rawPassword)
                 .build();
 
-        CustomerResponse mockResponse = CustomerResponse.builder()
+        UserResponse mockResponse = UserResponse.builder()
                 .id(UUID.randomUUID())
                 .name(name)
                 .email(email)
                 .build();
 
         when(passwordEncoder.encode(rawPassword)).thenReturn(hashedPassword);
-        when(customerService.createCustomer(name, email, hashedPassword, Role.USER)).thenReturn(mockResponse);
+        when(userService.createUser(name, email, hashedPassword, Role.CUSTOMER)).thenReturn(mockResponse);
 
         // Act
-        CustomerResponse response = authService.register(req);
+        UserResponse response = authService.register(req);
 
         // Assert
         verify(passwordEncoder).encode(rawPassword);
-        verify(customerService).createCustomer(name, email, hashedPassword, Role.USER);
+        verify(userService).createUser(name, email, hashedPassword, Role.CUSTOMER);
         
         assertEquals(mockResponse.getId(), response.getId());
         assertEquals(mockResponse.getName(), response.getName());

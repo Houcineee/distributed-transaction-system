@@ -15,7 +15,7 @@ import java.util.UUID;
 @Builder
 public class CreateAccountRequest {
 	@NotNull
-	private UUID customerId ;
+	private UUID userId ;
 	@NotNull
 	private Currency currency ;
 }

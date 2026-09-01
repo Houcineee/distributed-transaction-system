@@ -1,5 +1,6 @@
 package com.houcinee.bankapp.service;
 
+import com.houcinee.bankapp.model.AppUser;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.security.SignatureException;
@@ -9,10 +10,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.doReturn;
@@ -21,63 +22,70 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class JwtServiceTest {
 
-    private JwtService jwtService;
+	private JwtService jwtService;
 
-    @Mock
-    private UserDetails userDetails;
+	@Mock
+	private AppUser appUser;
 
-    private final String testSecretKey = "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970";
+	private final String testSecretKey = "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970";
 
-    @BeforeEach
-    void setUp() {
-        jwtService = new JwtService();
-        ReflectionTestUtils.setField(jwtService, "secretKey", testSecretKey);
-        ReflectionTestUtils.setField(jwtService, "jwtExpiration", 3600000L); // 1 hour
-    }
+	@BeforeEach
+	void setUp() {
+		jwtService = new JwtService();
+		ReflectionTestUtils.setField(jwtService, "secretKey", testSecretKey);
+		ReflectionTestUtils.setField(jwtService, "jwtExpiration", 3600000L); // 1 hour
+	}
 
-    @Test
-    void shouldGenerateAndExtractClaimsSuccessfully() {
-        when(userDetails.getUsername()).thenReturn("test@bank.com");
-        doReturn(List.of(new SimpleGrantedAuthority("ROLE_USER"))).when(userDetails).getAuthorities();
+	@Test
+	void givenAppUser_whenGenerateToken_thenExtractsExpectedClaims() {
+		when(appUser.getUsername()).thenReturn("test@bank.com");
+		when(appUser.getId()).thenReturn(UUID.fromString("550e8400-e29b-41d4-a716-446655440000"));
+		doReturn(List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER"))).when(appUser)
+		                                                              .getAuthorities();
 
-        String token = jwtService.generateToken(userDetails);
+		String token = jwtService.generateToken(appUser);
 
-        assertNotNull(token);
-        Claims claims = jwtService.extractAllClaims(token);
-        
-        assertEquals("test@bank.com", claims.getSubject());
-        
-        List<String> roles = claims.get("roles", List.class);
-        assertNotNull(roles);
-        assertTrue(roles.contains("ROLE_USER"));
-    }
+		assertNotNull(token);
+		Claims claims = jwtService.extractAllClaims(token);
 
-    @Test
-    void shouldThrowExceptionWhenTokenIsTampered() {
-        when(userDetails.getUsername()).thenReturn("test@bank.com");
-        doReturn(List.of(new SimpleGrantedAuthority("ROLE_USER"))).when(userDetails).getAuthorities();
-        String validToken = jwtService.generateToken(userDetails);
+		assertEquals("test@bank.com", claims.getSubject());
+		assertEquals("550e8400-e29b-41d4-a716-446655440000", claims.get("userId", String.class));
 
-        // Hacker intercepts and changes the last character
-        String tamperedToken = validToken.substring(0, validToken.length() - 1) + "A";
+		List<String> roles = claims.get("roles", List.class);
+		assertNotNull(roles);
+		assertTrue(roles.contains("ROLE_CUSTOMER"));
+	}
 
-        assertThrows(SignatureException.class, () -> {
-            jwtService.extractAllClaims(tamperedToken);
-        });
-    }
+	@Test
+	void givenTamperedToken_whenExtractClaims_thenThrowsSignatureException() {
+		when(appUser.getUsername()).thenReturn("test@bank.com");
+		when(appUser.getId()).thenReturn(UUID.fromString("550e8400-e29b-41d4-a716-446655440000"));
+		doReturn(List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER"))).when(appUser)
+		                                                              .getAuthorities();
+		String validToken = jwtService.generateToken(appUser);
 
-    @Test
-    void shouldThrowExceptionWhenTokenIsExpired() {
-        when(userDetails.getUsername()).thenReturn("test@bank.com");
-        doReturn(List.of(new SimpleGrantedAuthority("ROLE_USER"))).when(userDetails).getAuthorities();
+		// Hacker intercepts and changes the last character
+		String tamperedToken = validToken.substring(0, validToken.length() - 1) + "A";
 
-        // Set expiration to 1 second in the past (-1000 ms)
-        ReflectionTestUtils.setField(jwtService, "jwtExpiration", -1000L);
+		assertThrows(SignatureException.class, () -> {
+			jwtService.extractAllClaims(tamperedToken);
+		});
+	}
 
-        String expiredToken = jwtService.generateToken(userDetails);
+	@Test
+	void givenExpiredToken_whenExtractClaims_thenThrowsExpiredJwtException() {
+		when(appUser.getUsername()).thenReturn("test@bank.com");
+		when(appUser.getId()).thenReturn(UUID.fromString("550e8400-e29b-41d4-a716-446655440000"));
+		doReturn(List.of(new SimpleGrantedAuthority("ROLE_CUSTOMER"))).when(appUser)
+		                                                              .getAuthorities();
 
-        assertThrows(ExpiredJwtException.class, () -> {
-            jwtService.extractAllClaims(expiredToken);
-        });
-    }
+		// Set expiration to 1 second in the past (-1000 ms)
+		ReflectionTestUtils.setField(jwtService, "jwtExpiration", -1000L);
+
+		String expiredToken = jwtService.generateToken(appUser);
+
+		assertThrows(ExpiredJwtException.class, () -> {
+			jwtService.extractAllClaims(expiredToken);
+		});
+	}
 }
