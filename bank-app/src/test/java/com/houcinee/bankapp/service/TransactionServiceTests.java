@@ -111,7 +111,7 @@ public class TransactionServiceTests {
 			transactionService.transferMoney(srcUUID, destUUID, 10L);
 		});
 
-		assertEquals("Account not found" + srcUUID, exception.getMessage());
+		assertEquals("Account not found: " + srcUUID, exception.getMessage());
 	}
 
 	@Test

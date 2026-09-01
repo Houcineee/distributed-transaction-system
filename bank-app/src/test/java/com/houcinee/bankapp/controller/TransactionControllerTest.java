@@ -54,7 +54,7 @@ class TransactionControllerTest extends BaseWebMvcTest {
                 .with(mockAuth(UUID.randomUUID(), "CUSTOMER"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.amount").value("50.00"))
                 .andExpect(jsonPath("$.status").value("COMPLETED"));
     }
@@ -128,6 +128,6 @@ class TransactionControllerTest extends BaseWebMvcTest {
                 .with(mockAuth(UUID.randomUUID(), "ADMIN"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
     }
 }

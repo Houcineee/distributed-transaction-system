@@ -122,6 +122,29 @@ public class GlobalExceptionHandlerTest extends BaseWebMvcTest {
 		       .andExpect(jsonPath("$.error").value("Forbidden"))
 		       .andExpect(jsonPath("$.message").value("You do not have permission to access this resource"));
 	}
+
+	@Test
+	public void givenDataIntegrityViolation_whenHandle_thenReturns409() throws Exception {
+		mockMvc.perform(get("/test/dataIntegrityViolation").with(mockAuth(UUID.randomUUID(), "CUSTOMER")))
+		       .andExpect(status().isConflict())
+		       .andExpect(jsonPath("$.status").value(409))
+		       .andExpect(jsonPath("$.error").value("Conflict"))
+		       .andExpect(jsonPath("$.message").value("A resource with the given details already exists."))
+		       .andExpect(jsonPath("$.path").value("/test/dataIntegrityViolation"));
+	}
+
+	@Test
+	public void givenHttpMessageNotReadable_whenHandle_thenReturns400() throws Exception {
+		mockMvc.perform(post("/test/messageNotReadable")
+				       .with(mockAuth(UUID.randomUUID(), "CUSTOMER"))
+				       .contentType("application/json")
+				       .content("{invalid-json}"))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(jsonPath("$.status").value(400))
+		       .andExpect(jsonPath("$.error").value("Bad Request"))
+		       .andExpect(jsonPath("$.message").value("Malformed or unreadable request body."))
+		       .andExpect(jsonPath("$.path").value("/test/messageNotReadable"));
+	}
 }
 
 @RestController
@@ -163,6 +186,15 @@ class DummyController {
 	@GetMapping("/test/authorizationDenied")
 	public void throwAuthorizationDenied() {
 		throw new org.springframework.security.authorization.AuthorizationDeniedException("Denied", new org.springframework.security.authorization.AuthorizationDecision(false));
+	}
+
+	@GetMapping("/test/dataIntegrityViolation")
+	public void throwDataIntegrityViolation() {
+		throw new org.springframework.dao.DataIntegrityViolationException("Unique constraint violated");
+	}
+
+	@PostMapping("/test/messageNotReadable")
+	public void acceptBody(@org.springframework.web.bind.annotation.RequestBody TestDto body) {
 	}
 }
 

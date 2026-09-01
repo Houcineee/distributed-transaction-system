@@ -31,7 +31,7 @@ public class Account extends BaseEntity {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_id", nullable = false)
-	AppUser appUser;
+	private AppUser appUser;
 
 	@OneToMany(mappedBy = "sourceAccount")
 	private List<Transaction> sourceTransactions;
