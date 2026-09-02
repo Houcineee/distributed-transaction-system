@@ -19,9 +19,16 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 
 import java.time.LocalDateTime;
 
+import com.houcinee.bankapp.service.AuditService;
+import com.houcinee.bankapp.exception.TransferFailedException;
+import lombok.RequiredArgsConstructor;
+
 @Slf4j
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
+
+    private final AuditService auditService;
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFoundException(ResourceNotFoundException ex, HttpServletRequest request) {
@@ -86,8 +93,22 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleBadCredentialsException(BadCredentialsException ex, HttpServletRequest request) {
         log.warn("Failed login attempt: {}", ex.getMessage());
+        
+        String attemptedEmail = (String) request.getAttribute("attemptedEmail");
+        auditService.recordLoginFailure(attemptedEmail, ex.getMessage(), request);
+        
         ErrorResponse error = buildErrorResponse(HttpStatus.UNAUTHORIZED, "Invalid email or password", request.getRequestURI());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
+    }
+
+    @ExceptionHandler(TransferFailedException.class)
+    public ResponseEntity<ErrorResponse> handleTransferFailedException(TransferFailedException ex, HttpServletRequest request) {
+        log.warn("Transfer failed: {}", ex.getMessage());
+        
+        auditService.recordTransferFailed(ex.getTransactionRequest(), ex.getMessage(), request);
+        
+        ErrorResponse error = buildErrorResponse(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
@@ -100,6 +121,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthorizationDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAuthorizationDeniedException(AuthorizationDeniedException ex, HttpServletRequest request) {
         log.warn("Access denied for URI: {}", request.getRequestURI());
+        
+        auditService.recordAccessDenied(request.getRequestURI(), request);
+        
         ErrorResponse error = buildErrorResponse(HttpStatus.FORBIDDEN, "You do not have permission to access this resource", request.getRequestURI());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
     }

@@ -13,22 +13,31 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.houcinee.bankapp.service.AuditService;
+import jakarta.servlet.http.HttpServletRequest;
+
 @RestController
 @RequestMapping("/api/v1/transfers")
 public class TransactionController {
-	private final TransactionService transactionService ;
+	private final TransactionService transactionService;
+	private final AuditService auditService;
 
-	public TransactionController(TransactionService transactionService){
-		this.transactionService = transactionService ;
+	public TransactionController(TransactionService transactionService, AuditService auditService){
+		this.transactionService = transactionService;
+		this.auditService = auditService;
 	}
 
 	@PreAuthorize("hasRole('ADMIN') or @securityService.isAccountOwner(authentication, #transactionRequest.srcAccount)")
 	@PostMapping
-	public ResponseEntity<TransactionResponse> transferMoney(@RequestBody @Valid @P("transactionRequest") TransactionRequest  transactionRequest){
-		TransactionResponse transaction = transactionService.transferMoney(transactionRequest.getSrcAccount(),
+	public ResponseEntity<TransactionResponse> transferMoney(@RequestBody @Valid @P("transactionRequest") TransactionRequest transactionRequest, HttpServletRequest httpRequest){
+		TransactionResponse transaction = transactionService.transferMoney(
+				transactionRequest.getSrcAccount(),
 				transactionRequest.getDestAccount(),
 				transactionRequest.getAmount());
-		return ResponseEntity.status(HttpStatus.CREATED).body(transaction) ;
+		
+		auditService.recordTransferExecuted(transaction, httpRequest);
+		
+		return ResponseEntity.status(HttpStatus.CREATED).body(transaction);
 	}
 
 }

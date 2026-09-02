@@ -23,7 +23,7 @@ import java.util.UUID;
 public class AuditService {
 
     private final AuditLogRepository auditLogRepository;
-    private final ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public void recordLoginSuccess(HttpServletRequest request) {
         saveLog(getCurrentUserId(), AuditAction.LOGIN_SUCCESS, null, null, Map.of("status", "success"), request);
@@ -53,13 +53,16 @@ public class AuditService {
     }
 
     public void recordTransferExecuted(TransactionResponse response, HttpServletRequest request) {
-        saveLog(getCurrentUserId(), AuditAction.TRANSFER_EXECUTED, "TRANSACTION", response.getId(),
+        // Using Jackson object mapping to convert the response safely
+        saveLog(getCurrentUserId(), AuditAction.TRANSFER_EXECUTED, "TRANSACTION", response.getId(), 
             Map.of("transaction", response), request);
     }
 
     public void recordTransferFailed(TransactionRequest transactionRequest, String reason, HttpServletRequest request) {
         Map<String, Object> details = Map.of(
-                "request", transactionRequest,
+                "sourceAccountId", transactionRequest.getSrcAccount(),
+                "destinationAccountId", transactionRequest.getDestAccount(),
+                "amount", transactionRequest.getAmount(),
                 "reason", reason
         );
         saveLog(getCurrentUserId(), AuditAction.TRANSFER_FAILED, "TRANSACTION", null, details, request);
