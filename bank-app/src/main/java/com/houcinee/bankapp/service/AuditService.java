@@ -1,6 +1,7 @@
 package com.houcinee.bankapp.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.houcinee.bankapp.dto.AuditLogResponse;
 import com.houcinee.bankapp.dto.TransactionRequest;
 import com.houcinee.bankapp.dto.TransactionResponse;
 import com.houcinee.bankapp.enums.AuditAction;
@@ -10,10 +11,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
@@ -107,5 +113,46 @@ public class AuditService {
         if (request == null) return "UNKNOWN";
         String xForwardedFor = request.getHeader("X-Forwarded-For");
         return (xForwardedFor != null && !xForwardedFor.isBlank()) ? xForwardedFor.split(",")[0].trim() : request.getRemoteAddr();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AuditLogResponse> getAuditLogs(
+            UUID actorId,
+            AuditAction action,
+            Instant startDate,
+            Instant endDate,
+            Pageable pageable) {
+
+        Specification<AuditLog> spec = (root, query, cb) -> cb.conjunction();
+
+        if (actorId != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("actorId"), actorId));
+        }
+        if (action != null) {
+            spec = spec.and((root, query, cb) -> cb.equal(root.get("action"), action));
+        }
+        if (startDate != null) {
+            spec = spec.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("timestamp"), startDate));
+        }
+        if (endDate != null) {
+            spec = spec.and((root, query, cb) -> cb.lessThanOrEqualTo(root.get("timestamp"), endDate));
+        }
+
+        Page<AuditLog> logsPage = auditLogRepository.findAll(spec, pageable);
+        return logsPage.map(this::toResponse);
+    }
+
+    private AuditLogResponse toResponse(AuditLog log) {
+        return AuditLogResponse.builder()
+                .id(log.getId())
+                .actorId(log.getActorId())
+                .action(log.getAction())
+                .targetEntityType(log.getTargetEntityType())
+                .targetEntityId(log.getTargetEntityId())
+                .details(log.getDetails())
+                .ipAddress(log.getIpAddress())
+                .correlationId(log.getCorrelationId())
+                .timestamp(log.getTimestamp())
+                .build();
     }
 }

@@ -15,6 +15,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.houcinee.bankapp.dto.AuditLogResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+
+import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -80,5 +89,40 @@ class AuditServiceTest {
         
         // Verify it failed gracefully and didn't save corrupted data
         verify(auditLogRepository, never()).save(any());
+    }
+
+    @Test
+    void givenFiltersAndPageable_whenGetAuditLogs_thenCallsRepositoryAndReturnsMappedPage() {
+        // Arrange
+        UUID actorId = UUID.randomUUID();
+        AuditAction action = AuditAction.LOGIN_FAILURE;
+        Instant now = Instant.now();
+        Pageable pageable = PageRequest.of(0, 10);
+
+        AuditLog dummyLog = AuditLog.builder()
+                .actorId(actorId)
+                .action(action)
+                .targetEntityType("USER")
+                .targetEntityId(actorId)
+                .details("{\"reason\":\"Bad credentials\"}")
+                .ipAddress("127.0.0.1")
+                .correlationId("test-corr-id")
+                .build();
+
+        Page<AuditLog> logPage = new PageImpl<>(List.of(dummyLog), pageable, 1);
+        when(auditLogRepository.findAll(any(Specification.class), eq(pageable))).thenReturn(logPage);
+
+        // Act
+        Page<AuditLogResponse> responsePage = auditService.getAuditLogs(actorId, action, now, now, pageable);
+
+        // Assert
+        assertNotNull(responsePage);
+        assertEquals(1, responsePage.getTotalElements());
+        AuditLogResponse response = responsePage.getContent().get(0);
+        assertEquals(actorId, response.getActorId());
+        assertEquals(action, response.getAction());
+        assertEquals("USER", response.getTargetEntityType());
+        assertEquals("test-corr-id", response.getCorrelationId());
+        verify(auditLogRepository).findAll(any(Specification.class), eq(pageable));
     }
 }
