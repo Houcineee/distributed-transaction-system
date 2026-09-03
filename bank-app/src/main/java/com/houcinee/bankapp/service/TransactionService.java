@@ -1,8 +1,10 @@
 package com.houcinee.bankapp.service;
 
+import com.houcinee.bankapp.dto.TransactionRequest;
 import com.houcinee.bankapp.dto.TransactionResponse;
 import com.houcinee.bankapp.enums.TransactionStatus;
 import com.houcinee.bankapp.exception.ResourceNotFoundException;
+import com.houcinee.bankapp.exception.TransferFailedException;
 import com.houcinee.bankapp.helpers.MoneyUtil;
 import com.houcinee.bankapp.model.Account;
 import com.houcinee.bankapp.model.Transaction;
@@ -47,17 +49,23 @@ public class TransactionService {
 			return toTransactionResponse(transaction);
 		} catch (IllegalArgumentException e) {
 			transactionLoggerService.saveTransaction(amount, srcAccount, destAccount, TransactionStatus.FAILED);
-			throw e;
+			
+			TransactionRequest reqContext = new TransactionRequest(sourceAccountId, destinationAccountId, amount);
+			throw new TransferFailedException(e.getMessage(), reqContext);
 		}
 	}
 
 	private void validateTransfer(UUID srcId, UUID destId, Long amount) {
 		if (srcId.equals(destId)) {
-			throw new IllegalArgumentException("Source and destination accounts cannot be the same");
+			throw new TransferFailedException(
+				"Source and destination accounts cannot be the same", 
+				new TransactionRequest(srcId, destId, amount));
 		}
 
 		if (amount <= 0) {
-			throw new IllegalArgumentException("Transfer amount must be greater than zero");
+			throw new TransferFailedException(
+				"Transfer amount must be greater than zero", 
+				new TransactionRequest(srcId, destId, amount));
 		}
 	}
 

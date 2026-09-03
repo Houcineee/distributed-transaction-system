@@ -42,4 +42,25 @@ class AdminControllerTest extends BaseWebMvcTest {
 		                                             .contentType(MediaType.APPLICATION_JSON))
 		       .andExpect(status().isForbidden());
 	}
+
+	@Test
+	void givenAdmin_whenGetAuditLogs_thenReturns200() throws Exception {
+		Page<com.houcinee.bankapp.dto.AuditLogResponse> page = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
+		when(auditService.getAuditLogs(any(), any(), any(), any(), any())).thenReturn(page);
+
+		mockMvc.perform(get("/api/v1/admin/audit-logs")
+		               .param("page", "0")
+		               .param("action", "TRANSFER_EXECUTED")
+		               .with(mockAuth(UUID.randomUUID(), "ADMIN"))
+		               .contentType(MediaType.APPLICATION_JSON))
+		       .andExpect(status().isOk());
+	}
+
+	@Test
+	void givenCustomer_whenGetAuditLogs_thenReturns403() throws Exception {
+		mockMvc.perform(get("/api/v1/admin/audit-logs")
+		               .with(mockAuth(UUID.randomUUID(), "CUSTOMER"))
+		               .contentType(MediaType.APPLICATION_JSON))
+		       .andExpect(status().isForbidden());
+	}
 }

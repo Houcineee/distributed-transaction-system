@@ -18,16 +18,21 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
+import com.houcinee.bankapp.service.AuditService;
+import jakarta.servlet.http.HttpServletRequest;
+
 @RestController
 @RequestMapping("/api/v1/accounts")
 @Slf4j
 public class AccountController {
 	private final AccountService accountService;
 	private final TransactionService transactionService;
+	private final AuditService auditService;
 
-	public AccountController(AccountService accountService , TransactionService transactionService) {
+	public AccountController(AccountService accountService, TransactionService transactionService, AuditService auditService) {
 		this.accountService = accountService;
-		this.transactionService = transactionService ;
+		this.transactionService = transactionService;
+		this.auditService = auditService;
 	}
 
 	@PostAuthorize("hasRole('ADMIN') or returnObject.body.userId == authentication.principal")
@@ -38,8 +43,10 @@ public class AccountController {
 
 	@PreAuthorize("hasRole('ADMIN') or #req.userId == authentication.principal")
 	@PostMapping
-	public ResponseEntity<AccountResponse> createAccount(@RequestBody @Valid @P("req") CreateAccountRequest req) {
-		return ResponseEntity.status(HttpStatus.CREATED).body(accountService.createAccount(req));
+	public ResponseEntity<AccountResponse> createAccount(@RequestBody @Valid @P("req") CreateAccountRequest req, HttpServletRequest httpRequest) {
+		AccountResponse response = accountService.createAccount(req);
+		auditService.recordAccountCreated(response.getId(), response.getCurrency().name(), httpRequest);
+		return ResponseEntity.status(HttpStatus.CREATED).body(response);
 	}
 
 	@PreAuthorize("hasRole('ADMIN') or @securityService.isAccountOwner(authentication, #id)")

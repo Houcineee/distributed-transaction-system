@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.houcinee.bankapp.config.SecurityConfig;
 import com.houcinee.bankapp.filter.JwtAuthenticationFilter;
 import com.houcinee.bankapp.security.SecurityService;
+import com.houcinee.bankapp.service.AuditService;
 import com.houcinee.bankapp.service.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
@@ -35,6 +36,9 @@ public abstract class BaseWebMvcTest {
 
 	@MockitoBean(name = "securityService")
 	protected SecurityService securityService;
+
+	@MockitoBean
+	protected AuditService auditService;
 
 	protected RequestPostProcessor mockAuth(UUID userId, String role) {
 		var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));

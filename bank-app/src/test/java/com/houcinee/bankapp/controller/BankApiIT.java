@@ -5,10 +5,13 @@ import com.houcinee.bankapp.dto.CreateAccountRequest;
 import com.houcinee.bankapp.dto.LoginRequest;
 import com.houcinee.bankapp.dto.RegisterRequest;
 import com.houcinee.bankapp.dto.TransactionRequest;
+import com.houcinee.bankapp.enums.AuditAction;
 import com.houcinee.bankapp.enums.Currency;
 import com.houcinee.bankapp.model.Account;
 import com.houcinee.bankapp.model.AppUser;
+import com.houcinee.bankapp.model.AuditLog;
 import com.houcinee.bankapp.repository.AccountRepository;
+import com.houcinee.bankapp.repository.AuditLogRepository;
 import com.houcinee.bankapp.repository.UserRepository;
 import com.houcinee.bankapp.repository.TransactionRepository;
 import com.houcinee.bankapp.service.BaseIntegrationTest;
@@ -21,8 +24,10 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.util.List;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -46,8 +51,12 @@ public class BankApiIT extends BaseIntegrationTest {
 	@Autowired
 	private TransactionRepository transactionRepository;
 
+	@Autowired
+	private AuditLogRepository auditLogRepository;
+
 	@AfterEach
 	void tearDown() {
+		auditLogRepository.deleteAllInBatch();
 		transactionRepository.deleteAllInBatch();
 		accountRepository.deleteAllInBatch();
 		userRepository.deleteAllInBatch();
@@ -106,6 +115,14 @@ public class BankApiIT extends BaseIntegrationTest {
 		       .andExpect(jsonPath("$.totalElements").value(1))
 		       .andExpect(jsonPath("$.content[0].amount").value("50.00"))
 		       .andExpect(jsonPath("$.content[0].status").value("COMPLETED"));
+
+		// 10. Verify Audit Log was recorded in the database
+		List<AuditLog> auditLogs = auditLogRepository.findAll();
+		boolean transferAuditExists = auditLogs.stream()
+				.anyMatch(l -> l.getAction() == AuditAction.TRANSFER_EXECUTED &&
+				               "TRANSACTION".equals(l.getTargetEntityType()) &&
+				               l.getDetails().contains("50.00"));
+		assertTrue(transferAuditExists, "Audit log for TRANSFER_EXECUTED should be present in database");
 	}
 
 	@Test
@@ -143,6 +160,13 @@ public class BankApiIT extends BaseIntegrationTest {
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("$.totalElements").value(1))
 		       .andExpect(jsonPath("$.content[0].status").value("FAILED"));
+
+		// 5. Verify TRANSFER_FAILED audit log was recorded in the database
+		List<AuditLog> failedLogs = auditLogRepository.findAll();
+		boolean transferFailedAuditExists = failedLogs.stream()
+				.anyMatch(l -> l.getAction() == AuditAction.TRANSFER_FAILED &&
+				               l.getDetails().contains("Insufficient balance in source account"));
+		assertTrue(transferFailedAuditExists, "Audit log for TRANSFER_FAILED should be present in database");
 	}
 
 	@Test

@@ -77,10 +77,10 @@ public class TransactionServiceTests {
 	}
 
 	@Test
-	void givenSameAccounts_whenTransferFunds_thenThrowsIllegalArgumentException() {
+	void givenSameAccounts_whenTransferFunds_thenThrowsTransferFailedException() {
 		Account srcAccount = createAccount(1L, 100L);
 
-		IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+		com.houcinee.bankapp.exception.TransferFailedException exception = assertThrows(com.houcinee.bankapp.exception.TransferFailedException.class, () -> {
 			transactionService.transferMoney(srcAccount.getId(), srcAccount.getId(), 20L);
 		});
 
@@ -89,11 +89,11 @@ public class TransactionServiceTests {
 	}
 
 	@Test
-	void givenNonPositiveAmount_whenTransferFunds_thenThrowsIllegalArgumentException() {
+	void givenNonPositiveAmount_whenTransferFunds_thenThrowsTransferFailedException() {
 		Account srcAccount = createAccount(1L, 100L);
 		Account destAccount = createAccount(2L, 50L);
 
-		IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+		com.houcinee.bankapp.exception.TransferFailedException exception = assertThrows(com.houcinee.bankapp.exception.TransferFailedException.class, () -> {
 			transactionService.transferMoney(srcAccount.getId(), destAccount.getId(), -10L);
 		});
 
@@ -115,14 +115,14 @@ public class TransactionServiceTests {
 	}
 
 	@Test
-	void givenInsufficientFunds_whenTransferFunds_thenThrowsIllegalArgumentExceptionAndLogsFailure() {
+	void givenInsufficientFunds_whenTransferFunds_thenThrowsTransferFailedExceptionAndLogsFailure() {
 		Account srcAccount = createAccount(1L, 5L);
 		Account destAccount = createAccount(2L, 50L);
 
 		when(accountRepository.findAccountById(srcAccount.getId())).thenReturn(Optional.of(srcAccount));
 		when(accountRepository.findAccountById(destAccount.getId())).thenReturn(Optional.of(destAccount));
 
-		IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+		com.houcinee.bankapp.exception.TransferFailedException exception = assertThrows(com.houcinee.bankapp.exception.TransferFailedException.class, () -> {
 			transactionService.transferMoney(srcAccount.getId(), destAccount.getId(), 10L);
 		});
 
