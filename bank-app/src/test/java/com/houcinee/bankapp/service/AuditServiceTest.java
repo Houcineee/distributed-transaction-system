@@ -13,6 +13,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.UUID;
 
@@ -70,7 +71,7 @@ class AuditServiceTest {
         ObjectMapper brokenMapper = mock(ObjectMapper.class);
         
         // Inject the broken mock mapper using Reflection since it's instantiated inline
-        org.springframework.test.util.ReflectionTestUtils.setField(brokenService, "objectMapper", brokenMapper);
+        ReflectionTestUtils.setField(brokenService, "objectMapper", brokenMapper);
         
         when(brokenMapper.writeValueAsString(any())).thenThrow(new RuntimeException("Simulated JSON Exception"));
         

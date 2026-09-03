@@ -53,9 +53,13 @@ public class AuditService {
     }
 
     public void recordTransferExecuted(TransactionResponse response, HttpServletRequest request) {
-        // Using Jackson object mapping to convert the response safely
-        saveLog(getCurrentUserId(), AuditAction.TRANSFER_EXECUTED, "TRANSACTION", response.getId(), 
-            Map.of("transaction", response), request);
+        Map<String, Object> details = Map.of(
+                "sourceAccountId", response.getSourceAccountId(),
+                "destinationAccountId", response.getDestinationAccountId(),
+                "amount", response.getAmount(),
+                "status", response.getStatus().name()
+        );
+        saveLog(getCurrentUserId(), AuditAction.TRANSFER_EXECUTED, "TRANSACTION", response.getId(), details, request);
     }
 
     public void recordTransferFailed(TransactionRequest transactionRequest, String reason, HttpServletRequest request) {

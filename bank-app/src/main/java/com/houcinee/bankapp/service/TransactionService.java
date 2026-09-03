@@ -50,7 +50,6 @@ public class TransactionService {
 		} catch (IllegalArgumentException e) {
 			transactionLoggerService.saveTransaction(amount, srcAccount, destAccount, TransactionStatus.FAILED);
 			
-			// Context created only on failure to avoid unnecessary object allocation on happy path
 			TransactionRequest reqContext = new TransactionRequest(sourceAccountId, destinationAccountId, amount);
 			throw new TransferFailedException(e.getMessage(), reqContext);
 		}
