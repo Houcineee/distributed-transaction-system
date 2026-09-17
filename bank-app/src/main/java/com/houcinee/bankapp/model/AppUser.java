@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.UuidGenerator;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -18,6 +19,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Getter
 @Table(name = "users")
+@SQLDelete(sql = "UPDATE users SET enabled = false WHERE id = ?")
 public class AppUser extends BaseEntity implements UserDetails {
 	@Id
 	@GeneratedValue

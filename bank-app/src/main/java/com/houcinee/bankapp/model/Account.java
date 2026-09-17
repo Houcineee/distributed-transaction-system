@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.UUID;
 @Getter
 @Entity
 @Table(name = "accounts")
+@SQLDelete(sql = "UPDATE accounts SET enabled = false WHERE id = ?")
 public class Account extends BaseEntity {
 	@Id
 	@GeneratedValue
@@ -28,6 +30,9 @@ public class Account extends BaseEntity {
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
 	private Currency currency;
+
+	@Column(nullable = false)
+	private boolean enabled = true;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_id", nullable = false)
