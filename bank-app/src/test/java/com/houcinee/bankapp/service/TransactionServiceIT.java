@@ -44,11 +44,12 @@ public class TransactionServiceIT extends BaseIntegrationTest {
 		destAccountId = dest.getId();
 	}
 
+	@Autowired
+	private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
 	@AfterEach
 	void tearDown() {
-		transactionRepository.deleteAllInBatch();
-		accountRepository.deleteAllInBatch();
-		userRepository.deleteAllInBatch();
+		jdbcTemplate.execute("TRUNCATE TABLE audit_logs, transactions, accounts, users CASCADE");
 	}
 
 	@Test
