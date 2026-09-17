@@ -17,16 +17,20 @@ import com.houcinee.bankapp.repository.TransactionRepository;
 import com.houcinee.bankapp.service.BaseIntegrationTest;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
+import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.List;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -54,12 +58,12 @@ public class BankApiIT extends BaseIntegrationTest {
 	@Autowired
 	private AuditLogRepository auditLogRepository;
 
+	@Autowired
+	private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
 	@AfterEach
 	void tearDown() {
-		auditLogRepository.deleteAllInBatch();
-		transactionRepository.deleteAllInBatch();
-		accountRepository.deleteAllInBatch();
-		userRepository.deleteAllInBatch();
+		jdbcTemplate.execute("TRUNCATE TABLE audit_logs, transactions, accounts, users CASCADE");
 	}
 
 	@Test
@@ -72,7 +76,7 @@ public class BankApiIT extends BaseIntegrationTest {
 
 		// 3. Login to get token (using AppUser A's credentials)
 		String tokenA = login("alice@bank.com", "secure123");
-		
+
 		// 4. Login to get token (using AppUser B's credentials)
 		String tokenB = login("bob@bank.com", "secure123");
 
@@ -119,9 +123,8 @@ public class BankApiIT extends BaseIntegrationTest {
 		// 10. Verify Audit Log was recorded in the database
 		List<AuditLog> auditLogs = auditLogRepository.findAll();
 		boolean transferAuditExists = auditLogs.stream()
-				.anyMatch(l -> l.getAction() == AuditAction.TRANSFER_EXECUTED &&
-				               "TRANSACTION".equals(l.getTargetEntityType()) &&
-				               l.getDetails().contains("50.00"));
+		                                       .anyMatch(l -> l.getAction() == AuditAction.TRANSFER_EXECUTED && "TRANSACTION".equals(l.getTargetEntityType()) && l.getDetails()
+		                                                                                                                                                          .contains("50.00"));
 		assertTrue(transferAuditExists, "Audit log for TRANSFER_EXECUTED should be present in database");
 	}
 
@@ -164,8 +167,8 @@ public class BankApiIT extends BaseIntegrationTest {
 		// 5. Verify TRANSFER_FAILED audit log was recorded in the database
 		List<AuditLog> failedLogs = auditLogRepository.findAll();
 		boolean transferFailedAuditExists = failedLogs.stream()
-				.anyMatch(l -> l.getAction() == AuditAction.TRANSFER_FAILED &&
-				               l.getDetails().contains("Insufficient balance in source account"));
+		                                              .anyMatch(l -> l.getAction() == AuditAction.TRANSFER_FAILED && l.getDetails()
+		                                                                                                              .contains("Insufficient balance in source account"));
 		assertTrue(transferFailedAuditExists, "Audit log for TRANSFER_FAILED should be present in database");
 	}
 
@@ -184,18 +187,44 @@ public class BankApiIT extends BaseIntegrationTest {
 		                          .andReturn();
 
 		String userIdStr = JsonPath.read(result.getResponse()
-		                                           .getContentAsString(), "$.id");
+		                                       .getContentAsString(), "$.id");
 		UUID userId = UUID.fromString(userIdStr);
 
 		AppUser savedAppUser = userRepository.findById(userId)
 		                                     .orElseThrow();
 
 		// Assert that the database value is NOT the raw password
-		org.junit.jupiter.api.Assertions.assertNotEquals(rawPassword, savedAppUser.getPassword());
+		assertNotEquals(rawPassword, savedAppUser.getPassword());
 
 		// Bcrypt hashes start with $2a$, $2b$, or $2y$
-		org.junit.jupiter.api.Assertions.assertTrue(savedAppUser.getPassword()
-		                                                        .startsWith("$2a$"));
+		assertTrue(savedAppUser.getPassword()
+		                       .startsWith("$2a$"));
+	}
+
+	@Test
+	void givenImmutableAuditLog_whenAttemptDelete_thenDatabaseRejects() {
+		// 1. Manually create and save an audit log
+		AuditLog log = AuditLog.builder()
+		                       .action(AuditAction.LOGIN_SUCCESS)
+		                       .ipAddress("127.0.0.1")
+		                       .correlationId(UUID.randomUUID().toString())
+		                       .details("{}")
+		                       .build();
+		log = auditLogRepository.saveAndFlush(log);
+
+		final AuditLog savedLog = log;
+
+		// 2. Attempt to delete it. The DB trigger should block this and throw a JpaSystemException
+		JpaSystemException exception = Assertions.assertThrows(
+				JpaSystemException.class,
+				() -> {
+					auditLogRepository.delete(savedLog);
+					auditLogRepository.flush(); // Force Hibernate to execute the DELETE immediately
+				}
+		);
+
+		// 3. Verify the exception message comes from our Postgres trigger
+		assertTrue(exception.getCause().getCause().getMessage().contains("Compliance Violation"));
 	}
 
 	// --- Helpers ---
