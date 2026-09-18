@@ -1,6 +1,6 @@
 services:
   api:
-    image: ghcr.io/houcinee/bank-app:latest
+    image: ghcr.io/houcineee/bank-app:latest
     restart: always
     ports:
       - "80:8080"
