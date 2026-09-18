@@ -1,0 +1,28 @@
+services:
+  api:
+    image: ghcr.io/houcinee/bank-app:latest
+    restart: always
+    ports:
+      - "80:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db_service:5432/bank_db
+      - SPRING_DATASOURCE_USERNAME=${DB_USER}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+    depends_on:
+      - db_service
+
+  db_service:
+    image: postgres:17
+    restart: always
+    # Intentionally missing the 'ports' block. This keeps 5432 closed to the internet.
+    volumes:
+      - prod_db_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: bank_db
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+
+volumes:
+  prod_db_data:
