@@ -16,13 +16,22 @@ services:
   db_service:
     image: postgres:17
     restart: always
-    # Intentionally missing the 'ports' block. This keeps 5432 closed to the internet.
     volumes:
       - prod_db_data:/var/lib/postgresql/data
     environment:
       POSTGRES_DB: bank_db
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+
+  nginx:
+    image: nginx:latest
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
 
 volumes:
   prod_db_data:
