@@ -80,7 +80,21 @@ jobs:
           curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                -H "Accept: application/vnd.github.v3.raw" \
                -o nginx/nginx.conf -L https://raw.githubusercontent.com/${{ github.repository }}/main/bank-app/nginx/nginx.conf
-          
+
+          # Fetch Prometheus configuration
+          mkdir -p ~/bank-app/prometheus
+          curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+               -H "Accept: application/vnd.github.v3.raw" \
+               -o prometheus/prometheus.yml -L https://raw.githubusercontent.com/${{ github.repository }}/main/bank-app/prometheus/prometheus.yml
+
+          # Fetch Promtail configuration
+          mkdir -p ~/bank-app/loki
+          curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+               -H "Accept: application/vnd.github.v3.raw" \
+               -o loki/promtail-config.yml -L https://raw.githubusercontent.com/${{ github.repository }}/main/bank-app/loki/promtail-config.yml
+
+          # Inject Grafana password
+          echo "GRAFANA_PASSWORD=${{ secrets.GRAFANA_PASSWORD }}" >> .env
           # Authenticate to GHCR and deploy
           echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
           docker compose -f docker-compose.prod.yml pull
