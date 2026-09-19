@@ -1,0 +1,18 @@
+server:
+  http_listen_port: 9080 # required so that Promtail can be scraped by Prometheus
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml # Bookmark file to keep track of the last read log line
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: system
+    static_configs:
+    - targets:
+        - localhost
+      labels:
+        job: docker_logs
+        __path__: /var/lib/docker/containers/*/*-json.log # Read every log file in the Docker containers directory
