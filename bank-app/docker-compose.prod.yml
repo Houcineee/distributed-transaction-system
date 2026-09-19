@@ -2,8 +2,6 @@ services:
   api:
     image: ghcr.io/houcineee/bank-app:latest
     restart: always
-    ports:
-      - "80:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db_service:5432/bank_db
@@ -28,8 +26,10 @@ services:
     restart: always
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - api
 
