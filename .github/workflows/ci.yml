@@ -74,6 +74,12 @@ jobs:
           curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                -H "Accept: application/vnd.github.v3.raw" \
                -O -L https://raw.githubusercontent.com/${{ github.repository }}/main/bank-app/docker-compose.prod.yml
+
+          # Fetch Nginx configuration
+          mkdir -p ~/bank-app/nginx
+          curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+               -H "Accept: application/vnd.github.v3.raw" \
+               -o nginx/nginx.conf -L https://raw.githubusercontent.com/${{ github.repository }}/main/bank-app/nginx/nginx.conf
           
           # Authenticate to GHCR and deploy
           echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
