@@ -19,7 +19,7 @@ jobs:
         cache: maven
     - name: Build and Test with Maven
       run: ./mvnw -B clean verify
-      working-directory: bank-app
+      working-directory: backend
       env:
         JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
 
@@ -45,7 +45,7 @@ jobs:
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
-        context: ./bank-app
+        context: ./backend
         push: true
         platforms: linux/arm64
         tags: ghcr.io/houcineee/bank-app:latest
@@ -64,8 +64,8 @@ jobs:
         username: ubuntu
         key: ${{ secrets.ORACLE_SSH_KEY }}
         script: |
-          mkdir -p ~/bank-app
-          cd ~/bank-app
+          mkdir -p ~/banking-application
+          cd ~/banking-application
           
           # Inject secrets into .env
           echo "DB_USER=${{ secrets.PROD_DB_USER }}" > .env
@@ -75,25 +75,25 @@ jobs:
           # Fetch production compose file
           curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                -H "Accept: application/vnd.github.v3.raw" \
-               -O -L https://raw.githubusercontent.com/${{ github.repository }}/main/bank-app/docker-compose.prod.yml
+               -O -L https://raw.githubusercontent.com/${{ github.repository }}/main/docker-compose.prod.yml
 
           # Fetch Nginx configuration
-          mkdir -p ~/bank-app/nginx
+          mkdir -p ~/banking-application/nginx
           curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                -H "Accept: application/vnd.github.v3.raw" \
-               -o nginx/nginx.conf -L https://raw.githubusercontent.com/${{ github.repository }}/main/bank-app/nginx/nginx.conf
+               -o nginx/nginx.conf -L https://raw.githubusercontent.com/${{ github.repository }}/main/nginx/nginx.conf
 
           # Fetch Prometheus configuration
-          mkdir -p ~/bank-app/prometheus
+          mkdir -p ~/banking-application/prometheus
           curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                -H "Accept: application/vnd.github.v3.raw" \
-               -o prometheus/prometheus.yml -L https://raw.githubusercontent.com/${{ github.repository }}/main/bank-app/prometheus/prometheus.yml
+               -o prometheus/prometheus.yml -L https://raw.githubusercontent.com/${{ github.repository }}/main/prometheus/prometheus.yml
 
           # Fetch Promtail configuration
-          mkdir -p ~/bank-app/loki
+          mkdir -p ~/banking-application/loki
           curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
                -H "Accept: application/vnd.github.v3.raw" \
-               -o loki/promtail-config.yml -L https://raw.githubusercontent.com/${{ github.repository }}/main/bank-app/loki/promtail-config.yml
+               -o loki/promtail-config.yml -L https://raw.githubusercontent.com/${{ github.repository }}/main/loki/promtail-config.yml
 
           # Inject Grafana password
           echo "GRAFANA_PASSWORD=${{ secrets.GRAFANA_PASSWORD }}" >> .env
