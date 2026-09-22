@@ -80,7 +80,7 @@ class JwtAuthenticationFilterTest {
 	@Test
 	void givenValidToken_whenFilter_thenAuthenticatesUser() throws ServletException, IOException {
 		String token = "valid.jwt.token";
-		request.addHeader("Authorization", "Bearer " + token);
+		request.setCookies(new jakarta.servlet.http.Cookie("jwt", token));
 
 		Claims claims = new DefaultClaims(Map.of("sub", "alice@bank.com", "userId", "550e8400-e29b-41d4-a716-446655440000", "roles", List.of("ROLE_CUSTOMER")));
 
@@ -105,7 +105,7 @@ class JwtAuthenticationFilterTest {
 	@Test
 	void givenTokenWithMultipleRoles_whenFilter_thenAssignsAllRoles() throws ServletException, IOException {
 		String token = "valid.jwt.token";
-		request.addHeader("Authorization", "Bearer " + token);
+		request.setCookies(new jakarta.servlet.http.Cookie("jwt", token));
 
 		Claims claims = new DefaultClaims(Map.of("sub", "admin@bank.com", "userId", "550e8400-e29b-41d4-a716-446655440000", "roles", List.of("ROLE_CUSTOMER", "ROLE_ADMIN")));
 
@@ -131,7 +131,7 @@ class JwtAuthenticationFilterTest {
 	@Test
 	void givenExpiredToken_whenFilter_thenDoesNotAuthenticate() throws ServletException, IOException {
 		String token = "expired.jwt.token";
-		request.addHeader("Authorization", "Bearer " + token);
+		request.setCookies(new jakarta.servlet.http.Cookie("jwt", token));
 
 		when(jwtService.extractAllClaims(token)).thenThrow(new ExpiredJwtException(null, null, "Token expired"));
 
@@ -145,7 +145,7 @@ class JwtAuthenticationFilterTest {
 	@Test
 	void givenTamperedToken_whenFilter_thenDoesNotAuthenticate() throws ServletException, IOException {
 		String token = "tampered.jwt.token";
-		request.addHeader("Authorization", "Bearer " + token);
+		request.setCookies(new jakarta.servlet.http.Cookie("jwt", token));
 
 		when(jwtService.extractAllClaims(token)).thenThrow(new SignatureException("Invalid signature"));
 
@@ -159,7 +159,7 @@ class JwtAuthenticationFilterTest {
 	@Test
 	void givenTokenWithoutRolesClaim_whenFilter_thenAuthenticatesWithoutAuthorities() throws ServletException, IOException {
 		String token = "no.roles.token";
-		request.addHeader("Authorization", "Bearer " + token);
+		request.setCookies(new jakarta.servlet.http.Cookie("jwt", token));
 
 		// Token has a subject but no roles claim
 		Claims claims = new DefaultClaims(Map.of("sub", "legacy@bank.com", "userId", "550e8400-e29b-41d4-a716-446655440000"));
