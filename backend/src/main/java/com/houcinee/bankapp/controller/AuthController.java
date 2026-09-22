@@ -44,7 +44,7 @@ public class AuthController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(response);
 	}
 
-	@Value("${app.security.cookie.secure:false}")
+	@Value("${app.security.cookie.secure}")
 	private boolean secureCookie;
 
 	@PostMapping("/login")

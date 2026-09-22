@@ -71,6 +71,8 @@ jobs:
           echo "DB_USER=${{ secrets.PROD_DB_USER }}" > .env
           echo "DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}" >> .env
           echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> .env
+          echo "APP_CORS_ALLOWED_ORIGINS=https://bank.houcinee.tech" >> .env
+          echo "APP_SECURITY_COOKIE_SECURE=true" >> .env
           
           # Fetch production compose file
           curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \

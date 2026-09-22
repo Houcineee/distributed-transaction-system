@@ -7,6 +7,7 @@ import com.houcinee.bankapp.service.AccountService;
 import com.houcinee.bankapp.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,6 +24,11 @@ public class UserController {
 	public UserController(UserService userService, AccountService accountService) {
 		this.userService = userService;
 		this.accountService = accountService ;
+	}
+
+	@GetMapping("/me")
+	ResponseEntity<UserResponse> getCurrentUser(@AuthenticationPrincipal UUID principalId) {
+		return ResponseEntity.ok(userService.getUserById(principalId));
 	}
 
 	@PreAuthorize("hasRole('ADMIN') or #id == authentication.principal")
