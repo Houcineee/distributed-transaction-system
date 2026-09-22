@@ -10,7 +10,9 @@ import com.houcinee.bankapp.service.JwtService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -41,9 +43,11 @@ public class AuthController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(response);
 	}
 
+	@org.springframework.beans.factory.annotation.Value("${app.security.cookie.secure:false}")
+	private boolean secureCookie;
+
 	@PostMapping("/login")
 	public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
-		// Pass email to ExceptionHandler in case of BadCredentialsException
 		httpRequest.setAttribute("attemptedEmail", request.getEmail());
 		
 		Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
@@ -52,8 +56,31 @@ public class AuthController {
 		
 		auditService.recordLoginSuccess(httpRequest);
 		
-		return ResponseEntity.ok(LoginResponse.builder()
-		                                      .token(token)
-		                                      .build());
+		ResponseCookie jwtCookie = ResponseCookie.from("jwt", token)
+		        .httpOnly(true)
+		        .secure(secureCookie)
+		        .sameSite("Strict")
+		        .path("/")
+		        .maxAge(7 * 24 * 60 * 60)
+		        .build();
+
+		return ResponseEntity.ok()
+		        .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+		        .body(LoginResponse.builder().build()); // token removed from body
+	}
+
+	@PostMapping("/logout")
+	public ResponseEntity<Void> logout() {
+		ResponseCookie deleteCookie = ResponseCookie.from("jwt", "")
+		        .httpOnly(true)
+		        .secure(secureCookie)
+		        .sameSite("Strict")
+		        .path("/")
+		        .maxAge(0)
+		        .build();
+		        
+		return ResponseEntity.ok()
+		        .header(HttpHeaders.SET_COOKIE, deleteCookie.toString())
+		        .build();
 	}
 }
