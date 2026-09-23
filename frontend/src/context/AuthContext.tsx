@@ -18,9 +18,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     useEffect(() => {
         async function fetchUser() {
-            const { data } = await client.GET('/api/v1/users/me');
-            setUser(data ?? null);
-            setLoading(false);
+            try {
+                const { data } = await client.GET('/api/v1/users/me');
+                setUser(data ?? null);
+            } catch (err) {
+                console.error("Auth network error:", err);
+                setUser(null);
+            } finally {
+                setLoading(false);
+            }
         }
         fetchUser();
     }, []);
