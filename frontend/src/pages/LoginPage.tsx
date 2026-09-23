@@ -43,7 +43,7 @@ export function LoginPage() {
             
         } catch (err) {
             console.error("Login failed:", err);
-            setError("A network error occurred. ");
+            setError("Service temporarily unavailable. Please try again later.");
         } finally {
             setIsLoading(false);
         }
