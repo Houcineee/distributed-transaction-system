@@ -50,6 +50,14 @@ function App() {
               </ProtectedRoute>
             } 
           />
+          <Route
+            path="/accounts/new"
+            element={
+              <ProtectedRoute>
+                <CreateAccountPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Catch-all route to redirect to dashboard */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
