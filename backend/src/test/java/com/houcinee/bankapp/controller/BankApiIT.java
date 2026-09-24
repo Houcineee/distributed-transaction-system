@@ -227,6 +227,24 @@ public class BankApiIT extends BaseIntegrationTest {
 		assertTrue(exception.getCause().getCause().getMessage().contains("Compliance Violation"));
 	}
 
+	@Test
+	void givenAccountCreation_whenSuccess_thenAutoIssuesDebitCard() throws Exception {
+		// 1. Create users and accounts
+		String userId = createUser("Bob", "bob@bank.com");
+		String token = login("bob@bank.com", "secure123");
+
+		String accountId = createAccount(userId, token); 
+
+		// 2. Fetch cards for account
+		mockMvc.perform(get("/api/v1/cards/account/" + accountId).cookie(new Cookie("jwt", token)))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("$.length()").value(1))
+		       .andExpect(jsonPath("$[0].cardType").value("DEBIT"))
+		       // Validate masking over the wire
+		       .andExpect(jsonPath("$[0].cardNumber").value(org.hamcrest.Matchers.startsWith("**** **** **** ")))
+		       .andExpect(jsonPath("$[0].cvv").value("***"));
+	}
+
 	// --- Helpers ---
 	private String createUser(String name, String email) throws Exception {
 		RegisterRequest req = RegisterRequest.builder()

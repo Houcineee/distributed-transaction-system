@@ -37,7 +37,7 @@ public class AccountService {
 		AppUser appUser = userRepository.findById(req.getUserId())
 		                                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + req.getUserId()));
 		Account account = new Account(0L ,req.getCurrency() , appUser);
-		accountRepository.save(account) ;
+		account = accountRepository.save(account);
 
 		// Automatically issue a default DEBIT card for the new account
 		cardService.issueCard(account.getId(), CardType.DEBIT);
