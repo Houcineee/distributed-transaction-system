@@ -179,6 +179,8 @@ public class BankApiIT extends BaseIntegrationTest {
 		                                     .name("Eve")
 		                                     .email("eve@hacker.com")
 		                                     .password(rawPassword)
+		                                     .currency(Currency.MAD)
+		                                     .cardType(com.houcinee.bankapp.enums.CardType.DEBIT)
 		                                     .build();
 
 		MvcResult result = mockMvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON)
@@ -251,6 +253,8 @@ public class BankApiIT extends BaseIntegrationTest {
 		                                     .name(name)
 		                                     .email(email)
 		                                     .password("secure123")
+		                                     .currency(Currency.MAD)
+		                                     .cardType(com.houcinee.bankapp.enums.CardType.DEBIT)
 		                                     .build();
 		MvcResult result = mockMvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON)
 		                                                                .content(objectMapper.writeValueAsString(req)))
@@ -278,6 +282,7 @@ public class BankApiIT extends BaseIntegrationTest {
 		CreateAccountRequest req = CreateAccountRequest.builder()
 		                                               .userId(UUID.fromString(userId))
 		                                               .currency(Currency.MAD)
+		                                               .cardType(com.houcinee.bankapp.enums.CardType.DEBIT)
 		                                               .build();
 		MvcResult result = mockMvc.perform(post("/api/v1/accounts").cookie(new Cookie("jwt", token))
 		                                                           .contentType(MediaType.APPLICATION_JSON)

@@ -43,6 +43,7 @@ class AccountControllerTest extends BaseWebMvcTest {
 		CreateAccountRequest request = CreateAccountRequest.builder()
 		                                                   .userId(userId)
 		                                                   .currency(Currency.MAD)
+		                                                   .cardType(com.houcinee.bankapp.enums.CardType.DEBIT)
 		                                                   .build();
 
 		AccountResponse response = AccountResponse.builder()
@@ -67,6 +68,7 @@ class AccountControllerTest extends BaseWebMvcTest {
 		CreateAccountRequest request = CreateAccountRequest.builder()
 		                                                   .userId(targetUserId)
 		                                                   .currency(Currency.MAD)
+		                                                   .cardType(com.houcinee.bankapp.enums.CardType.DEBIT)
 		                                                   .build();
 
 		mockMvc.perform(post("/api/v1/accounts").with(mockAuth(loggedInUserId, "CUSTOMER")).contentType(MediaType.APPLICATION_JSON)

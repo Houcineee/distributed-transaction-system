@@ -40,6 +40,8 @@ class AuthControllerTest extends BaseWebMvcTest {
 		                                         .name("Houcine")
 		                                         .email("houcine@test.com")
 		                                         .password("secure123")
+		                                         .currency(com.houcinee.bankapp.enums.Currency.MAD)
+		                                         .cardType(com.houcinee.bankapp.enums.CardType.DEBIT)
 		                                         .build();
 
 		UserResponse response = UserResponse.builder()

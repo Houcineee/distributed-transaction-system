@@ -39,8 +39,9 @@ public class AccountService {
 		Account account = new Account(0L ,req.getCurrency() , appUser);
 		account = accountRepository.save(account);
 
-		// Automatically issue a default DEBIT card for the new account
-		cardService.issueCard(account.getId(), CardType.DEBIT);
+		// Automatically issue the requested card type for the new account
+		CardType typeToIssue = req.getCardType() != null ? req.getCardType() : CardType.DEBIT;
+		cardService.issueCard(account.getId(), typeToIssue);
 
 		log.info("Successfully created account {} for appUser {}", account.getId(), appUser.getId());
 		return toAccountResponse(account);
