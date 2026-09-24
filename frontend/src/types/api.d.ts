@@ -336,6 +336,10 @@ export interface components {
             name: string;
             email: string;
             password: string;
+            /** @enum {string} */
+            currency: "USD" | "EUR" | "GBP" | "MAD";
+            /** @enum {string} */
+            cardType: "DEBIT" | "CREDIT";
         };
         UserResponse: {
             /** Format: uuid */
@@ -357,6 +361,8 @@ export interface components {
             userId: string;
             /** @enum {string} */
             currency: "USD" | "EUR" | "GBP" | "MAD";
+            /** @enum {string} */
+            cardType: "DEBIT" | "CREDIT";
         };
         AccountResponse: {
             /** Format: uuid */
@@ -395,6 +401,8 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["AuditLogResponse"][];
@@ -402,8 +410,6 @@ export interface components {
             number?: number;
             sort?: components["schemas"]["SortObject"];
             pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
             empty?: boolean;
@@ -429,6 +435,8 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["AccountResponse"][];
@@ -436,8 +444,6 @@ export interface components {
             number?: number;
             sort?: components["schemas"]["SortObject"];
             pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
             empty?: boolean;
@@ -447,6 +453,8 @@ export interface components {
             totalElements?: number;
             /** Format: int32 */
             totalPages?: number;
+            first?: boolean;
+            last?: boolean;
             /** Format: int32 */
             size?: number;
             content?: components["schemas"]["TransactionResponse"][];
@@ -454,8 +462,6 @@ export interface components {
             number?: number;
             sort?: components["schemas"]["SortObject"];
             pageable?: components["schemas"]["PageableObject"];
-            first?: boolean;
-            last?: boolean;
             /** Format: int32 */
             numberOfElements?: number;
             empty?: boolean;
