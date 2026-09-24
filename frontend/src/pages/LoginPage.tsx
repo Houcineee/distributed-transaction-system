@@ -7,8 +7,8 @@ import { client } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 
 const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(1, "Password is required"),
+  email: z.string().email("Invalid email format"),
+  password: z.string().min(1, "Password required"),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -30,10 +30,9 @@ export function LoginPage() {
     });
 
     useEffect(() => {
-        // If they just got redirected from the register page, show a success banner
         const searchParams = new URLSearchParams(location.search);
         if (searchParams.get("registered") === "true") {
-            setSuccessMessage("Account created successfully! Please sign in.");
+            setSuccessMessage("Account spun up on The Beast. Please sign in.");
         }
     }, [location]);
 
@@ -42,98 +41,115 @@ export function LoginPage() {
         setSuccessMessage(null);
 
         try {
-            // 1. Send credentials to the backend
             const { error: loginError } = await client.POST("/api/v1/auth/login", {
                 body: { email: data.email, password: data.password }
             });
 
             if (loginError) {
-                setServerError((loginError as any).message || "Invalid email or password");
+                setServerError((loginError as any).message || "Invalid credentials. The bouncer says no.");
                 return;
             }
 
-            // 2. Fetch the user profile (now that we have the httpOnly cookie)
             const { data: userData, error: meError } = await client.GET("/api/v1/users/me");
             
             if (meError || !userData) {
-                setServerError("Failed to load user profile");
+                setServerError("Failed to retrieve profile.");
                 return;
             }
 
-            // 3. Update the global context with the user data
             setUser(userData);
-
-            // 4. Redirect to the protected dashboard
             navigate("/dashboard");
             
         } catch (err) {
-            console.error("Login failed:", err);
-            setServerError("Service temporarily unavailable. Please try again later.");
+            setServerError("The Oracle instance is taking a nap. Try again.");
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-md border border-gray-100">
-                <div>
-                    <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900">
-                        Sign in to your account
-                    </h2>
+        <div className="min-h-screen flex w-full bg-[var(--bg)] text-[var(--text-main)] font-sans">
+            
+            {/* Left Pane - Form (Flipped) */}
+            <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 relative bg-[var(--bg)] order-2 lg:order-1">
+                <div className="w-full max-w-md space-y-10">
+                    <div>
+                        <h2 className="text-3xl font-serif text-[var(--text-main)]">Sign In</h2>
+                        <p className="mt-2 text-sm text-[var(--text-muted)]">
+                            Access your highly exclusive, completely made-up wealth.
+                        </p>
+                    </div>
+
+                    {successMessage && (
+                        <div className="bg-green-50 border border-green-200 text-green-700 p-4 text-sm font-sans rounded-md">
+                            {successMessage}
+                        </div>
+                    )}
+
+                    {serverError && (
+                        <div className="bg-red-50 border border-red-200 text-red-600 p-4 text-sm font-sans rounded-md">
+                            {serverError}
+                        </div>
+                    )}
+
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                        <div className="space-y-5">
+                            <div>
+                                <label className="block text-xs uppercase tracking-wider text-[var(--text-muted)] mb-2 font-semibold">Email Address</label>
+                                <input
+                                    type="email"
+                                    {...register("email")}
+                                    className="w-full bg-[var(--bg-surface)] border border-[var(--border)] px-4 py-3 text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all rounded-md"
+                                    placeholder="007@example.com"
+                                />
+                                {errors.email && <p className="mt-2 text-xs text-red-600">{errors.email.message}</p>}
+                            </div>
+
+                            <div>
+                                <label className="block text-xs uppercase tracking-wider text-[var(--text-muted)] mb-2 font-semibold">Password</label>
+                                <input
+                                    type="password"
+                                    {...register("password")}
+                                    className="w-full bg-[var(--bg-surface)] border border-[var(--border)] px-4 py-3 text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all rounded-md"
+                                    placeholder="••••••••"
+                                />
+                                {errors.password && <p className="mt-2 text-xs text-red-600">{errors.password.message}</p>}
+                            </div>
+                        </div>
+
+                        <div className="pt-4">
+                            <button
+                                type="submit"
+                                disabled={isSubmitting}
+                                className="w-full bg-[var(--text-main)] text-[var(--bg)] hover:bg-[var(--accent)] transition-colors py-4 px-4 font-serif text-lg tracking-wide rounded-md shadow-lg shadow-black/5 disabled:opacity-50"
+                            >
+                                {isSubmitting ? "Authenticating..." : "Enter Vault"}
+                            </button>
+                        </div>
+                        
+                        <div className="text-center mt-6">
+                            <Link to="/register" className="text-sm text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors border-b border-transparent hover:border-[var(--accent)]">
+                                Not a member yet? Apply here.
+                            </Link>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {/* Right Pane - Editorial with Mesh */}
+            <div className="hidden lg:flex w-1/2 flex-col justify-between p-12 border-l border-[var(--border)] relative mesh-bg overflow-hidden order-1 lg:order-2">
+                <div className="relative z-10 self-end text-right">
+                    <h1 className="text-xl font-serif font-semibold tracking-widest text-[var(--accent)] mb-2 uppercase">Bank of Houcine</h1>
+                    <p className="text-[var(--text-muted)] text-sm tracking-wide uppercase">Members Only</p>
                 </div>
 
-                {successMessage && (
-                    <div className="p-3 bg-green-50 text-green-700 rounded text-sm text-center font-medium border border-green-200">
-                        {successMessage}
-                    </div>
-                )}
-
-                {serverError && (
-                    <div className="p-3 bg-red-50 text-red-700 rounded text-sm text-center border border-red-200">
-                        {serverError}
-                    </div>
-                )}
-
-                <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-6">
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Email address</label>
-                            <input
-                                type="email"
-                                {...register("email")}
-                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                placeholder="john@example.com"
-                            />
-                            {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>}
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700">Password</label>
-                            <input
-                                type="password"
-                                {...register("password")}
-                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                placeholder="••••••••"
-                            />
-                            {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>}
-                        </div>
-                    </div>
-
-                    <div>
-                        <button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                        >
-                            {isSubmitting ? "Signing in..." : "Sign in"}
-                        </button>
-                    </div>
-                    
-                    <div className="text-center text-sm">
-                        <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">
-                            Don't have an account? Create one here
-                        </Link>
-                    </div>
-                </form>
+                <div className="relative z-10 space-y-6">
+                    <h2 className="text-5xl font-serif leading-tight">
+                        We don't do branches.<br />
+                        <span className="serif-italic text-[var(--accent)]">We do The Beast.</span>
+                    </h2>
+                    <p className="text-lg text-[var(--text-main)] max-w-md leading-relaxed opacity-80">
+                        Experience the thrill of a UI that looks expensive, backed by a server that could run a small country.
+                    </p>
+                </div>
             </div>
         </div>
     );

@@ -45,124 +45,148 @@ export function RegisterPage() {
       });
 
       if (error) {
-        setServerError((error as any).message || "Registration failed. Please try again.");
+        setServerError((error as any).message || "Registration failed. The Beast is refusing connections.");
         return;
       }
-
       navigate("/login?registered=true");
     } catch (err) {
-      console.error("Network error:", err);
-      setServerError("Service temporarily unavailable. Please try again later.");
+      setServerError("Service temporarily unavailable. Our ARM instance is taking a breather.");
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-md border border-gray-100">
-        <div>
-          <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900">
-            Open an Account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            One form, instant access. Get your virtual card right now.
-          </p>
-        </div>
+    <div className="min-h-screen flex w-full bg-[var(--bg)] text-[var(--text-main)] font-sans">
+      
+      {/* Left Pane - Editorial / Visual with Mesh */}
+      <div className="hidden lg:flex w-1/2 flex-col justify-between p-12 border-r border-[var(--border)] relative mesh-bg overflow-hidden">
         
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
-          
-          {serverError && (
-            <div className="bg-red-50 text-red-600 p-3 rounded text-sm text-center">
-              {serverError}
-            </div>
-          )}
+        <div className="relative z-10">
+          <h1 className="text-xl font-serif font-semibold tracking-widest text-[var(--accent)] mb-2 uppercase">Bank of Houcine</h1>
+          <p className="text-[var(--text-muted)] text-sm tracking-wide uppercase">Deployed on The Beast</p>
+        </div>
 
-          <div className="space-y-4">
-            <div className="space-y-4 pt-2">
-              <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Personal Details</h3>
-              
+        <div className="relative z-10 space-y-6">
+          <h2 className="text-5xl font-serif leading-tight text-[var(--text-main)]">
+            Prestigious banking,<br />
+            <span className="serif-italic text-[var(--accent)]">powered by an Oracle ARM beast.</span>
+          </h2>
+          <p className="text-lg text-[var(--text-main)] max-w-md leading-relaxed opacity-80">
+            Welcome to the most over-engineered financial institution on the cloud. 
+            We have 24 cores and entirely fake money.
+          </p>
+          
+          <div className="pt-8 flex gap-8">
+            <div className="flex flex-col">
+              <span className="text-3xl font-serif text-[var(--text-main)]">24</span>
+              <span className="text-xs uppercase tracking-widest text-[var(--text-muted)] mt-1">CPU Cores</span>
+            </div>
+            <div className="w-px bg-[var(--border)]"></div>
+            <div className="flex flex-col">
+              <span className="text-3xl font-serif text-[var(--text-main)]">$0</span>
+              <span className="text-xs uppercase tracking-widest text-[var(--text-muted)] mt-1">Real value</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Pane - Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 relative bg-[var(--bg)]">
+        <div className="w-full max-w-md space-y-10">
+          <div>
+            <h2 className="text-3xl font-serif text-[var(--text-main)]">Join the Club</h2>
+            <p className="mt-2 text-sm text-[var(--text-muted)]">
+              Create your account to start playing with Monopoly money.
+            </p>
+          </div>
+          
+          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
+            
+            {serverError && (
+              <div className="bg-red-50 border border-red-100 text-red-600 p-4 text-sm font-sans rounded-md">
+                {serverError}
+              </div>
+            )}
+
+            <div className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                <label className="block text-xs uppercase tracking-wider text-[var(--text-muted)] mb-2 font-semibold">Legal Name</label>
                 <input
                   type="text"
                   {...register("name")}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="John Doe"
+                  className="w-full bg-[var(--bg-surface)] border border-[var(--border)] px-4 py-3 text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all rounded-md"
+                  placeholder="James Bond"
                 />
-                {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
+                {errors.name && <p className="mt-2 text-xs text-red-600">{errors.name.message}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Email Address</label>
+                <label className="block text-xs uppercase tracking-wider text-[var(--text-muted)] mb-2 font-semibold">Email Address</label>
                 <input
                   type="email"
                   {...register("email")}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="john@example.com"
+                  className="w-full bg-[var(--bg-surface)] border border-[var(--border)] px-4 py-3 text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all rounded-md"
+                  placeholder="007@example.com"
                 />
-                {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>}
+                {errors.email && <p className="mt-2 text-xs text-red-600">{errors.email.message}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Password</label>
+                <label className="block text-xs uppercase tracking-wider text-[var(--text-muted)] mb-2 font-semibold">Password</label>
                 <input
                   type="password"
                   {...register("password")}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="w-full bg-[var(--bg-surface)] border border-[var(--border)] px-4 py-3 text-[var(--text-main)] placeholder-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all rounded-md"
                   placeholder="••••••••"
                 />
-                {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>}
+                {errors.password && <p className="mt-2 text-xs text-red-600">{errors.password.message}</p>}
               </div>
-            </div>
-
-            <div className="space-y-4 pt-6">
-              <h3 className="text-lg font-medium text-gray-900 border-b pb-2">Account Setup</h3>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-6 pt-2">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Currency</label>
+                  <label className="block text-xs uppercase tracking-wider text-[var(--text-muted)] mb-2 font-semibold">Currency</label>
                   <select
                     {...register("currency")}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="w-full bg-[var(--bg-surface)] border border-[var(--border)] px-4 py-3 text-[var(--text-main)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all rounded-md cursor-pointer text-sm"
                   >
-                    <option value="MAD">MAD</option>
-                    <option value="USD">USD</option>
-                    <option value="EUR">EUR</option>
-                    <option value="GBP">GBP</option>
+                    <option value="MAD">MAD (Dirham)</option>
+                    <option value="USD">USD (Dollar)</option>
+                    <option value="EUR">EUR (Euro)</option>
+                    <option value="GBP">GBP (Pound)</option>
                   </select>
-                  {errors.currency && <p className="mt-1 text-sm text-red-600">{errors.currency.message}</p>}
+                  {errors.currency && <p className="mt-2 text-xs text-red-600">{errors.currency.message}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Card Type</label>
+                  <label className="block text-xs uppercase tracking-wider text-[var(--text-muted)] mb-2 font-semibold">Card Type</label>
                   <select
                     {...register("cardType")}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="w-full bg-[var(--bg-surface)] border border-[var(--border)] px-4 py-3 text-[var(--text-main)] focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] transition-all rounded-md cursor-pointer text-sm"
                   >
                     <option value="DEBIT">Debit</option>
                     <option value="CREDIT">Credit</option>
                   </select>
-                  {errors.cardType && <p className="mt-1 text-sm text-red-600">{errors.cardType.message}</p>}
+                  {errors.cardType && <p className="mt-2 text-xs text-red-600">{errors.cardType.message}</p>}
                 </div>
               </div>
             </div>
-          </div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              {isSubmitting ? "Creating your account..." : "Open Account"}
-            </button>
-          </div>
-          
-          <div className="text-center text-sm">
-            <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
-              Already have an account? Sign in here
-            </Link>
-          </div>
-        </form>
+            <div className="pt-6">
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full bg-[var(--text-main)] text-[var(--bg)] hover:bg-[var(--accent)] transition-colors py-4 px-4 font-serif text-lg tracking-wide rounded-md disabled:opacity-50 shadow-lg shadow-black/5"
+              >
+                {isSubmitting ? "Processing..." : "Open Account"}
+              </button>
+            </div>
+            
+            <div className="text-center mt-6">
+              <Link to="/login" className="text-sm text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors border-b border-transparent hover:border-[var(--accent)]">
+                Already a member? Sign in.
+              </Link>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
