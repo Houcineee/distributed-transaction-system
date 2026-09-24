@@ -32,7 +32,7 @@ export function LoginPage() {
     useEffect(() => {
         const searchParams = new URLSearchParams(location.search);
         if (searchParams.get("registered") === "true") {
-            setSuccessMessage("Account spun up on The Beast. Please sign in.");
+            setSuccessMessage("Welcome to the club. Please sign in.");
         }
     }, [location]);
 
@@ -61,7 +61,7 @@ export function LoginPage() {
             navigate("/dashboard");
             
         } catch (err) {
-            setServerError("The Oracle instance is taking a nap. Try again.");
+            setServerError("The servers are taking a nap. Try again.");
         }
     };
 
@@ -144,10 +144,11 @@ export function LoginPage() {
                 <div className="relative z-10 space-y-6">
                     <h2 className="text-5xl font-serif leading-tight">
                         We don't do branches.<br />
-                        <span className="serif-italic text-[var(--accent)]">We do The Beast.</span>
+                        <span className="serif-italic text-[var(--accent)]">We do localhost.</span>
                     </h2>
                     <p className="text-lg text-[var(--text-main)] max-w-md leading-relaxed opacity-80">
-                        Experience the thrill of a UI that looks expensive, backed by a server that could run a small country.
+                        Why trust a real bank when you can trust a side project? 
+                        Experience the thrill of a UI that looks expensive but costs nothing to run.
                     </p>
                 </div>
             </div>

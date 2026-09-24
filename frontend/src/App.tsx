@@ -4,6 +4,9 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { TransferPage } from "./pages/TransferPage";
+import { SettingsPage } from "./pages/SettingsPage";
+import { CreateAccountPage } from "./pages/CreateAccountPage";
 
 function App() {
   return (
@@ -20,6 +23,30 @@ function App() {
             element={
               <ProtectedRoute>
                 <DashboardPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/accounts/new" 
+            element={
+              <ProtectedRoute>
+                <CreateAccountPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/transfers" 
+            element={
+              <ProtectedRoute>
+                <TransferPage />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/settings" 
+            element={
+              <ProtectedRoute>
+                <SettingsPage />
               </ProtectedRoute>
             } 
           />

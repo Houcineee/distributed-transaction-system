@@ -1,21 +1,27 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { client } from "../lib/api";
+import { SideNav } from "../components/SideNav";
 import type { components } from "../types/api";
+import { Link } from "react-router-dom";
 
 type AccountResponse = components["schemas"]["AccountResponse"];
 type CardResponse = components["schemas"]["CardResponse"];
+type TransactionResponse = components["schemas"]["TransactionResponse"];
 
 export function DashboardPage() {
-    const { user, setUser } = useAuth();
+    const { user } = useAuth();
     const [accounts, setAccounts] = useState<AccountResponse[]>([]);
+    const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
     const [cards, setCards] = useState<CardResponse[]>([]);
+    const [transactions, setTransactions] = useState<TransactionResponse[]>([]);
     const [loading, setLoading] = useState(true);
 
+    // Initial fetch of accounts
     useEffect(() => {
         if (!user || !user.id) return;
         
-        async function fetchData() {
+        async function fetchAccounts() {
             try {
                 const { data: accData } = await client.GET("/api/v1/users/{id}/accounts", {
                     params: { path: { id: user!.id! } }
@@ -23,14 +29,7 @@ export function DashboardPage() {
                 
                 if (accData && accData.length > 0) {
                     setAccounts(accData);
-                    
-                    if (accData[0].id) {
-                        const { data: cardData } = await client.GET("/api/v1/cards/account/{accountId}", {
-                            params: { path: { accountId: accData[0].id } }
-                        });
-                        
-                        if (cardData) setCards(cardData);
-                    }
+                    setSelectedAccountId(accData[0].id || null);
                 }
             } catch (err) {
                 console.error(err);
@@ -39,55 +38,77 @@ export function DashboardPage() {
             }
         }
         
-        fetchData();
+        fetchAccounts();
     }, [user]);
 
-    async function handleLogout() {
-        try {
-            await client.POST("/api/v1/auth/logout");
-        } finally {
-            setUser(null);
+    // Fetch cards and transactions when selectedAccountId changes
+    useEffect(() => {
+        if (!selectedAccountId) return;
+
+        async function fetchAccountDetails() {
+            try {
+                const [{ data: cardData }, { data: txData }] = await Promise.all([
+                    client.GET("/api/v1/cards/account/{accountId}", {
+                        params: { path: { accountId: selectedAccountId! } }
+                    }),
+                    client.GET("/api/v1/accounts/{id}/transactions", {
+                        params: { 
+                            path: { id: selectedAccountId! },
+                            query: { pageable: { page: 0, size: 5 } } as any 
+                        }
+                    })
+                ]);
+                
+                setCards(cardData || []);
+                setTransactions(txData?.content || []);
+            } catch (err) {
+                console.error(err);
+            }
         }
-    }
+
+        fetchAccountDetails();
+    }, [selectedAccountId]);
 
     if (loading) {
-        return <div className="min-h-screen flex items-center justify-center font-serif text-[var(--accent)] bg-[var(--bg)] text-2xl italic">Waking up the Oracle ARM instance...</div>;
+        return <div className="min-h-screen flex items-center justify-center font-serif text-[var(--accent)] bg-[var(--bg)] text-2xl italic">Opening the vault...</div>;
     }
 
-    const primaryAccount = accounts[0];
+    const selectedAccount = accounts.find(a => a.id === selectedAccountId) || accounts[0];
     const primaryCard = cards[0];
+    const recentTxs = transactions.slice(0, 3);
 
     return (
         <div className="min-h-screen bg-[var(--bg-surface)] text-[var(--text-main)] font-sans flex flex-col md:flex-row">
             
-            {/* Nav: N3 Side-rail */}
-            <aside className="w-full md:w-64 border-r border-[var(--border)] bg-[var(--bg)] p-8 flex flex-col justify-between shrink-0 shadow-sm relative z-10">
-                <div>
-                    <h1 className="text-xl font-serif font-bold tracking-widest text-[var(--accent)] mb-12 uppercase">Bank of Houcine</h1>
-                    <nav className="space-y-6 text-sm font-semibold tracking-wider uppercase text-[var(--text-muted)]">
-                        <a href="#" className="block text-[var(--accent)]">Dashboard</a>
-                        <a href="#" className="block hover:text-[var(--text-main)] transition-colors">Transfers</a>
-                        <a href="#" className="block hover:text-[var(--text-main)] transition-colors">Settings</a>
-                    </nav>
-                </div>
-                <div className="pt-8 border-t border-[var(--border)]">
-                    <p className="text-sm text-[var(--text-main)] font-medium mb-1 truncate">{user?.name}</p>
-                    <p className="text-xs text-[var(--text-muted)] mb-6 truncate">{user?.email}</p>
-                    <button 
-                        onClick={handleLogout}
-                        className="text-xs uppercase tracking-wider font-semibold text-red-500 hover:text-red-600 transition-colors"
-                    >
-                        Disconnect
-                    </button>
-                </div>
-            </aside>
+            <SideNav />
 
             {/* Main Content: Bento Grid */}
             <main className="flex-1 p-6 md:p-12 overflow-y-auto mesh-bg relative">
                 <header className="mb-12 flex justify-between items-end relative z-10">
                     <div>
                         <h2 className="text-5xl font-serif text-[var(--text-main)] tracking-tight">Welcome back, {user?.name}.</h2>
-                        <p className="text-[var(--text-muted)] mt-4 font-sans text-lg font-medium">Your entirely fictitious wealth is secure on The Beast.</p>
+                        <p className="text-[var(--text-muted)] mt-4 font-sans text-lg font-medium">Your entirely fictitious wealth is secure.</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        {accounts.length > 1 && (
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)]">Active Ledger:</span>
+                                <select 
+                                    className="text-sm font-semibold bg-[var(--bg)] px-4 py-2 border border-[var(--border)] rounded-md text-[var(--text-main)] focus:outline-none focus:border-[var(--accent)] shadow-sm cursor-pointer"
+                                    value={selectedAccountId || ''}
+                                    onChange={(e) => setSelectedAccountId(e.target.value)}
+                                >
+                                    {accounts.map((acc, idx) => (
+                                        <option key={acc.id} value={acc.id}>
+                                            Account #{idx + 1} ({acc.currency})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+                        <Link to="/accounts/new" className="text-sm bg-[var(--bg)] hover:bg-[var(--bg-surface)] px-4 py-2 border border-[var(--border)] rounded-md text-[var(--text-main)] font-semibold transition-colors shadow-sm">
+                            + Open Ledger
+                        </Link>
                     </div>
                 </header>
 
@@ -103,8 +124,8 @@ export function DashboardPage() {
                         </div>
                         <div>
                             <h3 className="text-7xl font-serif tracking-tight mb-4 text-[var(--text-main)]">
-                                {primaryAccount?.balance ? Number(primaryAccount.balance).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'} 
-                                <span className="text-3xl text-[var(--accent)] ml-3 italic">{primaryAccount?.currency || 'USD'}</span>
+                                {selectedAccount?.balance ? Number(selectedAccount.balance).toLocaleString('en-US', { minimumFractionDigits: 2 }) : '0.00'} 
+                                <span className="text-3xl text-[var(--accent)] ml-3 italic">{selectedAccount?.currency || 'USD'}</span>
                             </h3>
                             <p className="text-sm text-[var(--text-muted)] font-medium">
                                 Almost enough to buy a coffee (if it was real).
@@ -128,18 +149,18 @@ export function DashboardPage() {
                                 </div>
                             </div>
                         ) : (
-                            <div className="z-10 mt-auto text-sm opacity-70">No card issued.</div>
+                            <div className="z-10 mt-auto text-sm opacity-70">No card issued for this account.</div>
                         )}
                     </div>
 
                     {/* Bento Box 3: Market Status */}
                     <div className="glass-panel p-8 rounded-xl flex flex-col justify-between">
-                        <span className="text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)]">Server Load</span>
+                        <span className="text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)]">Portfolio</span>
                         <div className="mt-auto">
                             <div className="flex items-end gap-2 mb-2">
-                                <span className="text-5xl font-serif text-[var(--accent)] tracking-tight">0.01%</span>
+                                <span className="text-5xl font-serif text-[var(--accent)] tracking-tight">↑ 12.4%</span>
                             </div>
-                            <p className="text-sm text-[var(--text-muted)] font-medium">The 24-core Oracle instance is bored.</p>
+                            <p className="text-sm text-[var(--text-muted)] font-medium">Return on imaginary investments.</p>
                         </div>
                     </div>
 
@@ -147,16 +168,35 @@ export function DashboardPage() {
                     <div className="md:col-span-2 glass-panel p-8 rounded-xl flex flex-col">
                         <div className="flex justify-between items-center mb-6">
                             <span className="text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)]">Recent Transactions</span>
-                            <span className="text-xs text-[var(--accent)] hover:text-[var(--accent-hover)] font-semibold transition-colors cursor-pointer">View all &rarr;</span>
+                            <Link to="/transfers" className="text-xs text-[var(--accent)] hover:text-[var(--accent-hover)] font-semibold transition-colors">View all &rarr;</Link>
                         </div>
-                        <div className="flex-1 flex items-center justify-center border-2 border-dashed border-[var(--border)] bg-[var(--bg)]/50 rounded-lg">
-                            <p className="text-sm text-[var(--text-muted)] text-center font-medium">
-                                Nothing to see here. <br/>
-                                <span className="text-xs opacity-70 block mt-2">Try sending someone fake money.</span>
-                            </p>
-                        </div>
+                        
+                        {recentTxs.length > 0 ? (
+                            <div className="flex-1 overflow-hidden flex flex-col gap-4">
+                                {recentTxs.map(tx => {
+                                    const isSender = tx.sourceAccountId === selectedAccount?.id;
+                                    return (
+                                        <div key={tx.id} className="flex justify-between items-center py-2 border-b border-[var(--border)] last:border-0">
+                                            <div>
+                                                <p className="text-sm font-semibold">{isSender ? "Outgoing Transfer" : "Incoming Transfer"}</p>
+                                                <p className="text-xs text-[var(--text-muted)] font-mono mt-1">{new Date(tx.createdAt || '').toLocaleDateString()}</p>
+                                            </div>
+                                            <span className={`text-lg font-mono ${isSender ? "text-[var(--text-main)]" : "text-[var(--accent)]"}`}>
+                                                {isSender ? "-" : "+"}{tx.amount}
+                                            </span>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        ) : (
+                            <div className="flex-1 flex items-center justify-center border-2 border-dashed border-[var(--border)] bg-[var(--bg)]/50 rounded-lg">
+                                <p className="text-sm text-[var(--text-muted)] text-center font-medium">
+                                    Nothing to see here. <br/>
+                                    <span className="text-xs opacity-70 block mt-2">Try sending someone fake money.</span>
+                                </p>
+                            </div>
+                        )}
                     </div>
-
                 </div>
             </main>
         </div>

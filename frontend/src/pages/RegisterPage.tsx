@@ -45,12 +45,12 @@ export function RegisterPage() {
       });
 
       if (error) {
-        setServerError((error as any).message || "Registration failed. The Beast is refusing connections.");
+        setServerError((error as any).message || "Registration failed. Our butler is on strike.");
         return;
       }
       navigate("/login?registered=true");
     } catch (err) {
-      setServerError("Service temporarily unavailable. Our ARM instance is taking a breather.");
+      setServerError("Service temporarily unavailable. Try again shortly.");
     }
   };
 
@@ -62,23 +62,23 @@ export function RegisterPage() {
         
         <div className="relative z-10">
           <h1 className="text-xl font-serif font-semibold tracking-widest text-[var(--accent)] mb-2 uppercase">Bank of Houcine</h1>
-          <p className="text-[var(--text-muted)] text-sm tracking-wide uppercase">Deployed on The Beast</p>
+          <p className="text-[var(--text-muted)] text-sm tracking-wide uppercase">Private Wealth</p>
         </div>
 
         <div className="relative z-10 space-y-6">
           <h2 className="text-5xl font-serif leading-tight text-[var(--text-main)]">
             Prestigious banking,<br />
-            <span className="serif-italic text-[var(--accent)]">powered by an Oracle ARM beast.</span>
+            <span className="serif-italic text-[var(--accent)]">for entirely fake money.</span>
           </h2>
           <p className="text-lg text-[var(--text-main)] max-w-md leading-relaxed opacity-80">
-            Welcome to the most over-engineered financial institution on the cloud. 
-            We have 24 cores and entirely fake money.
+            Welcome to the most exclusive financial institution on localhost. 
+            Please do not enter real credit card numbers, I will cry.
           </p>
           
           <div className="pt-8 flex gap-8">
             <div className="flex flex-col">
-              <span className="text-3xl font-serif text-[var(--text-main)]">24</span>
-              <span className="text-xs uppercase tracking-widest text-[var(--text-muted)] mt-1">CPU Cores</span>
+              <span className="text-3xl font-serif text-[var(--text-main)]">100%</span>
+              <span className="text-xs uppercase tracking-widest text-[var(--text-muted)] mt-1">Imaginary</span>
             </div>
             <div className="w-px bg-[var(--border)]"></div>
             <div className="flex flex-col">
