@@ -28,7 +28,6 @@ public class AuthService {
                 .userId(userResponse.getId())
                 .currency(req.getCurrency())
                 .cardType(req.getCardType())
-                .cardholderName(req.getCardholderName())
                 .build();
         accountService.createAccount(accountRequest);
         

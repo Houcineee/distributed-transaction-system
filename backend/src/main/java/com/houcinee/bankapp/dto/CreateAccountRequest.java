@@ -21,5 +21,4 @@ public class CreateAccountRequest {
 	private Currency currency ;
 	@NotNull
 	private CardType cardType;
-	private String cardholderName;
 }

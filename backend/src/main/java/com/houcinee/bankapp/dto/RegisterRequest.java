@@ -1,6 +1,8 @@
 package com.houcinee.bankapp.dto;
 
 
+import com.houcinee.bankapp.enums.CardType;
+import com.houcinee.bankapp.enums.Currency;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -22,10 +24,8 @@ public class RegisterRequest {
 	private String password;
 	
 	@NotNull
-	private com.houcinee.bankapp.enums.Currency currency;
+	private Currency currency;
 	
 	@NotNull
-	private com.houcinee.bankapp.enums.CardType cardType;
-	
-	private String cardholderName;
+	private CardType cardType;
 }
