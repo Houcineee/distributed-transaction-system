@@ -18,5 +18,10 @@ public enum AuditAction {
 
     // Financial
     TRANSFER_EXECUTED,
-    TRANSFER_FAILED
+    TRANSFER_FAILED,
+
+    // Card
+    CARD_CREATED,
+    CARD_BLOCKED,
+    CARD_ACTIVATED
 }

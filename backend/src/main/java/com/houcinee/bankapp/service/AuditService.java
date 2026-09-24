@@ -78,6 +78,19 @@ public class AuditService {
         saveLog(getCurrentUserId(), AuditAction.TRANSFER_FAILED, "TRANSACTION", null, details, request);
     }
 
+    public void recordCardCreated(UUID cardId, String cardType, UUID accountId, HttpServletRequest request) {
+        Map<String, Object> details = Map.of("cardType", cardType, "accountId", accountId.toString());
+        saveLog(getCurrentUserId(), AuditAction.CARD_CREATED, "CARD", cardId, details, request);
+    }
+
+    public void recordCardBlocked(UUID cardId, HttpServletRequest request) {
+        saveLog(getCurrentUserId(), AuditAction.CARD_BLOCKED, "CARD", cardId, Map.of("status", "BLOCKED"), request);
+    }
+
+    public void recordCardActivated(UUID cardId, HttpServletRequest request) {
+        saveLog(getCurrentUserId(), AuditAction.CARD_ACTIVATED, "CARD", cardId, Map.of("status", "ACTIVE"), request);
+    }
+
     private void saveLog(UUID actorId, AuditAction action, String entityType, UUID entityId, Map<String, Object> detailsMap, HttpServletRequest request) {
         try {
             String detailsJson = objectMapper.writeValueAsString(detailsMap);

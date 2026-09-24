@@ -36,6 +36,8 @@ public class AccountServiceTests {
 	private AccountRepository accountRepository;
 	@Mock
 	private UserRepository userRepository;
+	@Mock
+	private CardService cardService;
 	@InjectMocks
 	private AccountService accountService;
 

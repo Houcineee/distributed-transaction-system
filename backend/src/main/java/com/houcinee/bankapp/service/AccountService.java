@@ -2,6 +2,7 @@ package com.houcinee.bankapp.service;
 
 import com.houcinee.bankapp.dto.AccountResponse;
 import com.houcinee.bankapp.dto.CreateAccountRequest;
+import com.houcinee.bankapp.enums.CardType;
 import com.houcinee.bankapp.exception.ResourceNotFoundException;
 import com.houcinee.bankapp.helpers.MoneyUtil;
 import com.houcinee.bankapp.model.Account;
@@ -21,10 +22,12 @@ import java.util.UUID;
 public class AccountService {
 	private final AccountRepository accountRepository ;
 	private final UserRepository userRepository;
+	private final CardService cardService;
 
-	public AccountService(AccountRepository accountRepository , UserRepository userRepository){
+	public AccountService(AccountRepository accountRepository, UserRepository userRepository, CardService cardService){
 		this.accountRepository = accountRepository ;
 		this.userRepository = userRepository;
+		this.cardService = cardService;
 	}
 
 
@@ -35,6 +38,9 @@ public class AccountService {
 		                                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + req.getUserId()));
 		Account account = new Account(0L ,req.getCurrency() , appUser);
 		accountRepository.save(account) ;
+
+		// Automatically issue a default DEBIT card for the new account
+		cardService.issueCard(account.getId(), CardType.DEBIT);
 
 		log.info("Successfully created account {} for appUser {}", account.getId(), appUser.getId());
 		return toAccountResponse(account);
