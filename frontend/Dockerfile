@@ -12,8 +12,9 @@ RUN npm ci
 # Copy the rest of the frontend source code
 COPY . .
 
-# Build the Vite project
-RUN npm run build
+# Build the Vite project with specified mode (defaults to staging)
+ARG MODE=staging
+RUN npm run build -- --mode ${MODE}
 
 # Stage 2: Serve with Nginx
 FROM nginx:alpine
