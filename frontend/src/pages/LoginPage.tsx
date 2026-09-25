@@ -54,7 +54,11 @@ export function LoginPage() {
         return;
       }
       setUser(userData);
-      navigate("/dashboard");
+      if (userData.role === "ADMIN") {
+        navigate("/admin");
+      } else {
+        navigate("/dashboard");
+      }
     } catch {
       setServerError("Servers unreachable. Enjoy the brief moment of financial plausible deniability.");
     }

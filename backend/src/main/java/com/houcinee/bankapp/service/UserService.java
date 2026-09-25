@@ -55,6 +55,7 @@ public class UserService {
 		                       .id(appUser.getId())
 		                       .name(appUser.getName())
 		                       .email(appUser.getEmail())
+		                       .role(appUser.getRole())
 		                       .createdAt(appUser.getCreatedAt())
 		                       .build();
 	}

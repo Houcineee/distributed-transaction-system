@@ -7,6 +7,7 @@ export interface AuthContextType {
     user: UserResponse | null;
     loading: boolean;
     setUser: (user: UserResponse | null) => void;
+    isAdmin: boolean;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);

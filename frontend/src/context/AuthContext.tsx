@@ -24,8 +24,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         fetchUser();
     }, []);
 
+    const isAdmin = user?.role === "ADMIN";
+
     return (
-        <AuthContext.Provider value={{ user, loading, setUser }}>
+        <AuthContext.Provider value={{ user, loading, setUser, isAdmin }}>
             {children}
         </AuthContext.Provider>
     );

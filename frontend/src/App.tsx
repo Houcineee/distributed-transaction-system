@@ -7,6 +7,10 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { TransferPage } from "./pages/TransferPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { CreateAccountPage } from "./pages/CreateAccountPage";
+import { AdminLayout } from "./layouts/AdminLayout";
+import { AdminAccountsPage } from "./pages/admin/AdminAccountsPage";
+import { AdminAuditPage } from "./pages/admin/AdminAuditPage";
+import { AdminHealthPage } from "./pages/admin/AdminHealthPage";
 
 function App() {
   return (
@@ -17,11 +21,11 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           
-          {/* Protected Routes */}
+          {/* Customer Protected Routes (Accessible only if NOT an admin) */}
           <Route 
             path="/dashboard" 
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requireRole="CUSTOMER">
                 <DashboardPage />
               </ProtectedRoute>
             } 
@@ -29,7 +33,7 @@ function App() {
           <Route 
             path="/accounts/new" 
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requireRole="CUSTOMER">
                 <CreateAccountPage />
               </ProtectedRoute>
             } 
@@ -37,7 +41,7 @@ function App() {
           <Route 
             path="/transfers" 
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requireRole="CUSTOMER">
                 <TransferPage />
               </ProtectedRoute>
             } 
@@ -45,21 +49,28 @@ function App() {
           <Route 
             path="/settings" 
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requireRole="CUSTOMER">
                 <SettingsPage />
               </ProtectedRoute>
             } 
           />
+
+          {/* Admin Protected Routes (Accessible only to ADMIN users) */}
           <Route
-            path="/accounts/new"
+            path="/admin"
             element={
-              <ProtectedRoute>
-                <CreateAccountPage />
+              <ProtectedRoute requireRole="ADMIN">
+                <AdminLayout />
               </ProtectedRoute>
             }
-          />
+          >
+            <Route index element={<AdminAccountsPage />} />
+            <Route path="accounts" element={<AdminAccountsPage />} />
+            <Route path="audit" element={<AdminAuditPage />} />
+            <Route path="health" element={<AdminHealthPage />} />
+          </Route>
 
-          {/* Catch-all route to redirect to dashboard */}
+          {/* Catch-all route */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </BrowserRouter>
