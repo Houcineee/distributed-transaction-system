@@ -1,94 +1,135 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif&family=Manrope:wght@400;500;600;700;800&display=swap');
 @import 'tailwindcss';
 
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/Geist-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('/fonts/GeistMono-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 @theme {
-  --font-sans: 'Manrope', sans-serif;
-  --font-serif: 'Instrument Serif', Georgia, serif;
-  --font-mono: 'DM Mono', ui-monospace, monospace;
+  --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, monospace;
+  --color-gold: #C5A059;
+  --color-gold-hover: #B59049;
+  --color-gold-light: #DFC06E;
+  --color-gold-pale: #F5E5BA;
+  --color-gold-dark: #8A6729;
+  --color-gold-soft: rgba(197, 160, 89, 0.10);
+  --color-gold-border: rgba(197, 160, 89, 0.28);
 }
 
 :root {
-  --color-paper: oklch(97% 0.014 220);
-  --color-paper-2: oklch(100% 0 0);
-  --color-paper-3: oklch(93% 0.03 220);
-  --color-ink: oklch(20% 0.045 230);
-  --color-muted: oklch(51% 0.04 225);
-  --color-rule: oklch(86% 0.035 225);
-  --color-accent: oklch(43% 0.17 242);
-  --color-accent-deep: oklch(30% 0.14 242);
-  --color-accent-soft: oklch(88% 0.06 225);
-  --color-accent-ink: oklch(100% 0 0);
-  --color-focus: oklch(53% 0.18 242);
-  --color-error: oklch(49% 0.16 28);
-  --color-success: oklch(44% 0.13 155);
+  /* Cupertino Light Design System */
+  --bg-canvas: #FBFBFD;
+  --bg-surface: #FFFFFF;
+  --bg-subtle: #F5F5F7;
+  --bg-hover: #EBEBED;
+  
+  --ink-primary: #1D1D1F;
+  --ink-secondary: #86868B;
+  --ink-tertiary: #A1A1A6;
+  
+  --accent-gold: #C5A059;
+  --accent-gold-soft: rgba(197, 160, 89, 0.10);
+  --accent-gold-border: rgba(197, 160, 89, 0.28);
+  --accent-gold-dark: #8A6729;
+  
+  --accent-green: #00D06C;
+  --accent-green-soft: rgba(0, 208, 108, 0.12);
+  --accent-blue: #0071E3;
+  --accent-blue-soft: rgba(0, 113, 227, 0.08);
+  
+  --border-hairline: rgba(0, 0, 0, 0.07);
+  --border-subtle: #E5E5EA;
+  
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.04), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+  --shadow-elevated: 0 20px 40px -15px rgba(0, 0, 0, 0.08), 0 0 1px rgba(0, 0, 0, 0.12);
+  --shadow-card-tactile: 0 25px 50px -12px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
 }
 
-html, body, #root { min-height: 100vh; margin: 0; padding: 0; background: var(--color-paper); color: var(--color-ink); font-family: 'Manrope', sans-serif; -webkit-font-smoothing: antialiased; }
-* { box-sizing: border-box; }
+html, body, #root {
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-canvas);
+  color: var(--ink-primary);
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.012em;
+}
 
-/* Structural Grid for the App */
-.app-shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
-.app-sidebar { border-right: 1px solid var(--color-rule); background: color-mix(in oklch, var(--color-paper) 95%, transparent); padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between; }
-.app-main { padding: 3rem 4rem; overflow-y: auto; }
+* {
+  box-sizing: border-box;
+}
 
-/* Typography */
-h1, h2, h3, h4 { margin: 0; font-family: 'Instrument Serif', Georgia, serif; font-weight: 400; letter-spacing: -0.02em; }
-.serif { font-family: 'Instrument Serif', serif; }
-.mono { font-family: 'DM Mono', monospace; }
-.muted { color: var(--color-muted); }
-.eyebrow { font-family: 'DM Mono', monospace; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--color-muted); }
+/* Tabular numbers for financial balance data */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
 
-/* Components */
-.panel { border: 1px solid var(--color-rule); background: var(--color-paper-2); border-radius: 8px; box-shadow: 0 4px 24px rgba(0,0,0,0.02); overflow: hidden; }
-.panel-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--color-rule); display: flex; justify-content: space-between; align-items: center; background: color-mix(in oklch, var(--color-paper-2) 98%, var(--color-paper)); }
-.panel-body { padding: 1.5rem; }
+/* Scrollbar refinement */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
 
-/* Data Tables */
-.data-table { width: 100%; border-collapse: collapse; }
-.data-table th { text-align: left; padding: 1rem 1.5rem; border-bottom: 1px solid var(--color-rule); font-family: 'DM Mono', monospace; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-muted); font-weight: 500; }
-.data-table td { padding: 1rem 1.5rem; border-bottom: 1px solid var(--color-rule); font-size: 0.85rem; }
-.data-table tr:last-child td { border-bottom: none; }
-.data-table tr:hover td { background: color-mix(in oklch, var(--color-paper) 40%, transparent); }
-.data-table td.amount { font-family: 'DM Mono', monospace; text-align: right; font-weight: 500; }
-.data-table th.amount { text-align: right; }
+/* Layout Shell */
+.app-shell {
+  min-height: 100vh;
+  background-color: var(--bg-canvas);
+}
 
-/* Forms */
-.field { margin-bottom: 1.5rem; }
-.field label { display: block; margin-bottom: 0.5rem; font-family: 'DM Mono', monospace; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-muted); }
-.field input, .field select { width: 100%; border: 1px solid var(--color-rule); border-radius: 6px; background: var(--color-paper-2); padding: 0.85rem 1rem; font-family: 'DM Mono', monospace; font-size: 0.85rem; color: var(--color-ink); transition: border-color 0.2s, box-shadow 0.2s; }
-.field input:focus, .field select:focus { outline: none; border-color: var(--color-accent); box-shadow: 0 0 0 3px color-mix(in oklch, var(--color-accent) 15%, transparent); }
-.field-error { color: var(--color-error); font-size: 0.75rem; margin-top: 0.35rem; font-family: 'DM Mono', monospace; }
+@media (min-width: 768px) {
+  .app-shell {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+  }
+}
 
-/* Buttons */
-.btn { display: inline-flex; align-items: center; justify-content: center; padding: 0.85rem 1.5rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; border-radius: 6px; }
-.btn-primary { background: var(--color-ink); color: var(--color-paper-2); }
-.btn-primary:hover { background: var(--color-accent); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-.btn-secondary { border-color: var(--color-rule); color: var(--color-ink); background: transparent; }
-.btn-secondary:hover { border-color: var(--color-ink); }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+.app-main {
+  padding: 1.25rem 1.25rem 6.5rem 1.25rem;
+  overflow-y: auto;
+  background-color: var(--bg-canvas);
+}
 
-/* Layout Utilities */
-.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2rem; }
-.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; }
-.flex-between { display: flex; justify-content: space-between; align-items: center; }
-.gap-2 { gap: 0.5rem; }
-.gap-4 { gap: 1rem; }
-.mt-2 { margin-top: 0.5rem; }
-.mt-4 { margin-top: 1rem; }
-.mt-8 { margin-top: 2rem; }
-.mb-2 { margin-bottom: 0.5rem; }
-.mb-4 { margin-bottom: 1rem; }
-.mb-8 { margin-bottom: 2rem; }
-.text-right { text-align: right; }
+@media (min-width: 768px) {
+  .app-main {
+    padding: 2.75rem 3.5rem;
+  }
+}
 
-/* Auth Layout */
-.auth-layout { min-height: 100vh; display: grid; place-items: center; background: var(--color-paper); }
-.auth-box { width: 100%; max-width: 420px; padding: 3.5rem; background: var(--color-paper-2); border: 1px solid var(--color-rule); border-radius: 12px; box-shadow: 0 8px 40px rgba(0,0,0,0.04); }
+/* Glass Card */
+.apple-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: 18px;
+  box-shadow: var(--shadow-card);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
 
-/* Alerts */
-.alert { padding: 1rem 1.25rem; border: 1px solid var(--color-rule); border-radius: 6px; margin-bottom: 1.5rem; font-size: 0.8rem; display: flex; flex-direction: column; gap: 0.25rem; }
-.alert-error { border-left: 3px solid var(--color-error); background: color-mix(in oklch, var(--color-error) 4%, white); color: var(--color-error); }
-.alert-success { border-left: 3px solid var(--color-success); background: color-mix(in oklch, var(--color-success) 4%, white); color: var(--color-success); }
-.alert-title { font-weight: 700; font-family: 'Manrope', sans-serif; }
-.alert-sub { font-family: 'DM Mono', monospace; font-size: 0.75rem; opacity: 0.9; }
-
+.apple-card:hover {
+  box-shadow: var(--shadow-elevated);
+  transform: translateY(-1px);
+}

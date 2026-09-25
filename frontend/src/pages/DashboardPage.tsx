@@ -1,7 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import { client } from "../lib/api";
 import { SideNav } from "../components/SideNav";
+import { PhysicalCard } from "../components/PhysicalCard";
+import { AccountSelector } from "../components/AccountSelector";
+import { CreateAccountModal } from "../components/CreateAccountModal";
+import { CurrencyIcon } from "../components/CurrencyIcon";
+import { getCurrencyDetails, formatCurrencyAmount } from "../lib/currency";
+import { CopyableId } from "../components/CopyableId";
 import type { components } from "../types/api";
 
 type AccountResponse = components["schemas"]["AccountResponse"];
@@ -9,171 +16,361 @@ type CardResponse = components["schemas"]["CardResponse"];
 type TransactionResponse = components["schemas"]["TransactionResponse"];
 
 export function DashboardPage() {
-    const { user } = useAuth();
-    const [accounts, setAccounts] = useState<AccountResponse[]>([]);
-    const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
-    const [cards, setCards] = useState<CardResponse[]>([]);
-    const [transactions, setTransactions] = useState<TransactionResponse[]>([]);
-    const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const [accounts, setAccounts] = useState<AccountResponse[]>([]);
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+  const [cards, setCards] = useState<CardResponse[]>([]);
+  const [transactions, setTransactions] = useState<TransactionResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isNewAccountOpen, setIsNewAccountOpen] = useState(false);
 
-    useEffect(() => {
-        if (!user?.id) return;
-        async function fetchAccounts() {
-            try {
-                const { data } = await client.GET("/api/v1/users/{id}/accounts", { params: { path: { id: user!.id! } } });
-                if (data?.length) {
-                    setAccounts(data);
-                    setSelectedAccountId(data[0].id || null);
-                }
-            } finally { setLoading(false); }
+  useEffect(() => {
+    if (!user?.id) return;
+    async function fetchAccounts() {
+      try {
+        const { data } = await client.GET("/api/v1/users/{id}/accounts", {
+          params: { path: { id: user!.id! } },
+        });
+        if (data?.length) {
+          setAccounts(data);
+          setSelectedAccountId(data[0].id || null);
         }
-        fetchAccounts();
-    }, [user]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchAccounts();
+  }, [user]);
 
-    useEffect(() => {
-        if (!selectedAccountId) return;
-        const accountId = selectedAccountId;
-        async function fetchDetails() {
-            const [{ data: cardData }, { data: txData }] = await Promise.all([
-                client.GET("/api/v1/cards/account/{accountId}", { params: { path: { accountId } } }),
-                client.GET("/api/v1/accounts/{id}/transactions", { params: { path: { id: accountId }, query: { pageable: { page: 0, size: 50 } } } }),
-            ]);
-            setCards(cardData || []);
-            setTransactions(txData?.content || []);
+  useEffect(() => {
+    if (!selectedAccountId) return;
+    const accountId = selectedAccountId;
+    async function fetchDetails() {
+      const [{ data: cardData }, { data: txData }] = await Promise.all([
+        client.GET("/api/v1/cards/account/{accountId}", {
+          params: { path: { accountId } },
+        }),
+        client.GET("/api/v1/accounts/{id}/transactions", {
+          params: { path: { id: accountId }, query: { pageable: { page: 0, size: 50 } } },
+        }),
+      ]);
+      setCards(cardData || []);
+      setTransactions(txData?.content || []);
+    }
+    fetchDetails().catch(console.error);
+  }, [selectedAccountId]);
+
+  const selectedAccount = accounts.find((acc) => acc.id === selectedAccountId) || accounts[0];
+  const primaryCard = cards[0];
+  const currencyInfo = getCurrencyDetails(selectedAccount?.currency);
+
+  // Only show COMPLETED (succeeded) transactions
+  const successfulTransactions = useMemo(() => {
+    return transactions.filter((tx) => tx.status === "COMPLETED");
+  }, [transactions]);
+
+  // Compute real monthly inflow and outflow from successful transactions
+  const { monthlyInflow, monthlyOutflow } = useMemo(() => {
+    if (!selectedAccount?.id) return { monthlyInflow: 0, monthlyOutflow: 0 };
+    
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    let inflow = 0;
+    let outflow = 0;
+
+    successfulTransactions.forEach((tx) => {
+      const txDate = tx.createdAt ? new Date(tx.createdAt) : null;
+      const isThisMonth = txDate && txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear;
+      
+      if (isThisMonth) {
+        const amount = Number(tx.amount || 0);
+        if (tx.destinationAccountId === selectedAccount.id) {
+          inflow += amount;
+        } else if (tx.sourceAccountId === selectedAccount.id) {
+          outflow += amount;
         }
-        fetchDetails().catch(console.error);
-    }, [selectedAccountId]);
+      }
+    });
 
-    if (loading) return (
-        <div className="app-shell">
-            <SideNav />
-            <main className="app-main" style={{ display: "grid", placeItems: "center" }}>
-                <div style={{ textAlign: "center" }}>
-                    <div className="eyebrow">Checking your money...</div>
-                    <div className="muted mt-2" style={{ fontSize: "0.75rem" }}>Yes, we counted it twice.</div>
-                </div>
-            </main>
-        </div>
-    );
+    return { monthlyInflow: inflow, monthlyOutflow: outflow };
+  }, [successfulTransactions, selectedAccount]);
 
-    const selectedAccount = accounts.find((account) => account.id === selectedAccountId) || accounts[0];
-    const primaryCard = cards[0];
-
+  if (loading) {
     return (
-        <div className="app-shell">
-            <SideNav />
-            <main className="app-main">
-                <header className="flex-between mb-8">
-                    <div>
-                        <h1 style={{ fontSize: "3.5rem", lineHeight: 1 }}>Portfolio Overview</h1>
-                        <p className="muted mt-2" style={{ fontSize: "0.85rem" }}>Live position for {user?.name}</p>
-                    </div>
-                    {accounts.length > 1 && (
-                        <div style={{ width: "250px" }}>
-                            <div className="field" style={{ marginBottom: 0 }}>
-                                <label>Selected Entity</label>
-                                <select value={selectedAccountId || ""} onChange={(e) => setSelectedAccountId(e.target.value)}>
-                                    {accounts.map((account, index) => <option key={account.id} value={account.id}>Account {String(index + 1).padStart(2, "0")} ({account.currency})</option>)}
-                                </select>
-                            </div>
-                        </div>
-                    )}
-                </header>
-
-                <div className="grid-3 mb-8">
-                    <div className="panel" style={{ gridColumn: "span 2" }}>
-                        <div className="panel-header">
-                            <span className="eyebrow">Available Liquidity</span>
-                            <span className="eyebrow" style={{ color: "var(--color-ink)" }}>{selectedAccount?.currency || "USD"}</span>
-                        </div>
-                        <div className="panel-body flex-between" style={{ padding: "3rem 2rem" }}>
-                            <div>
-                                <div style={{ fontSize: "4rem", lineHeight: 1, letterSpacing: "-0.02em", fontFamily: "var(--font-serif)" }}>
-                                    {selectedAccount?.balance ? Number(selectedAccount.balance).toLocaleString("en-US", { minimumFractionDigits: 2 }) : "0.00"}
-                                </div>
-                                <div className="muted mt-4" style={{ fontSize: "0.8rem", display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                                    <div style={{ width: "6px", height: "6px", background: "var(--color-success)", borderRadius: "50%" }}></div>
-                                    Still technically yours.
-                                </div>
-                            </div>
-                            <div style={{ textAlign: "right" }}>
-                                <div className="eyebrow mb-2">Account ID</div>
-                                <div className="mono" style={{ fontSize: "0.85rem" }}>{selectedAccount?.id || "—"}</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="panel">
-                        <div className="panel-header">
-                            <span className="eyebrow">Active Instruments</span>
-                        </div>
-                        <div className="panel-body">
-                            {primaryCard ? (
-                                <>
-                                    <div className="flex-between mb-4">
-                                        <span className="eyebrow muted">Status</span>
-                                        <span className="mono" style={{ fontSize: "0.8rem", color: "var(--color-success)" }}>ACTIVE</span>
-                                    </div>
-                                    <div className="flex-between mb-4">
-                                        <span className="eyebrow muted">Type</span>
-                                        <span className="mono" style={{ fontSize: "0.8rem" }}>{primaryCard.cardType}</span>
-                                    </div>
-                                    <div className="flex-between">
-                                        <span className="eyebrow muted">Card Number</span>
-                                        <span className="mono" style={{ fontSize: "0.8rem" }}>**** {primaryCard.cardNumber?.slice(-4) || "****"}</span>
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="muted" style={{ fontSize: "0.8rem", fontStyle: "italic" }}>No cards issued.</div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                <div className="panel">
-                    <div className="panel-header">
-                        <span className="eyebrow">Ledger Activity</span>
-                    </div>
-                    {transactions.length > 0 ? (
-                        <table className="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Ref</th>
-                                    <th>Date</th>
-                                    <th>Direction</th>
-                                    <th>Counterparty (Ext)</th>
-                                    <th className="amount">Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {transactions.map((tx, idx) => {
-                                    const isOut = tx.sourceAccountId === selectedAccount?.id;
-                                    return (
-                                        <tr key={tx.id}>
-                                            <td className="mono muted" style={{ fontSize: "0.7rem" }}>{String(idx + 1).padStart(3, "0")}</td>
-                                            <td className="mono" style={{ fontSize: "0.8rem" }}>{new Date(tx.createdAt || "").toISOString().split('T')[0]}</td>
-                                            <td>
-                                                <span style={{ display: "inline-block", padding: "0.2rem 0.5rem", background: isOut ? "var(--color-paper)" : "color-mix(in oklch, var(--color-success) 10%, white)", color: isOut ? "var(--color-ink)" : "var(--color-success)", fontSize: "0.65rem", fontFamily: "var(--font-mono)", textTransform: "uppercase" }}>
-                                                    {isOut ? "OUTBOUND" : "INBOUND"}
-                                                </span>
-                                            </td>
-                                            <td className="mono" style={{ fontSize: "0.8rem" }}>{isOut ? tx.destinationAccountId?.slice(0, 8) : tx.sourceAccountId?.slice(0, 8)}...</td>
-                                            <td className="amount" style={{ color: isOut ? "inherit" : "var(--color-success)" }}>
-                                                {isOut ? "-" : "+"}{Number(tx.amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    ) : (
-                        <div className="panel-body text-center" style={{ padding: "4rem 2rem" }}>
-                            <div className="eyebrow mb-2">No Transactions Found</div>
-                            <div className="muted" style={{ fontSize: "0.85rem" }}>Enjoy the rare moment of financial peace.</div>
-                        </div>
-                    )}
-                </div>
-            </main>
-        </div>
+      <div className="app-shell">
+        <SideNav />
+        <main className="app-main flex items-center justify-center min-h-screen">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 rounded-full border-2 border-black/10 border-t-[#1D1D1F] animate-spin" />
+            <span className="text-xs uppercase tracking-widest text-[#86868B] font-medium">
+              Updating Portfolio
+            </span>
+          </div>
+        </main>
+      </div>
     );
+  }
+
+  const handleAccountCreated = async (newAccountId: string) => {
+    if (!user?.id) return;
+    try {
+      const { data } = await client.GET("/api/v1/users/{id}/accounts", {
+        params: { path: { id: user.id } },
+      });
+      if (data?.length) {
+        setAccounts(data);
+        setSelectedAccountId(newAccountId);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const formattedBalance = selectedAccount?.balance
+    ? Number(selectedAccount.balance).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : "0.00";
+
+  return (
+    <div className="app-shell">
+      <SideNav />
+      <main className="app-main">
+        {/* Top Header / Account Switcher */}
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4 mb-6 pb-4 md:mb-10 md:pb-6 border-b border-black/[0.06]">
+          <div>
+            <h1 className="text-2xl md:text-4xl font-normal tracking-[-0.03em] text-[#1D1D1F]">
+              Good day, {user?.name?.split(" ")[0] || "Houcine"}
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <AccountSelector
+              accounts={accounts}
+              selectedAccountId={selectedAccountId}
+              onSelectAccount={(id) => setSelectedAccountId(id)}
+            />
+
+            <button
+              type="button"
+              onClick={() => setIsNewAccountOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-[#F5F5F7] border border-black/[0.08] shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:border-black/15 text-xs font-semibold text-[#1D1D1F] transition-all active:scale-[0.98] cursor-pointer"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              <span>New Account</span>
+            </button>
+          </div>
+        </header>
+
+        {/* Hero Section: Balance & Physical Card */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-12">
+          
+          {/* Left Column: Liquid Balance & Send Action */}
+          <div className="lg:col-span-7 flex flex-col justify-between space-y-6">
+            <div className="bg-white border border-black/[0.06] rounded-[24px] p-8 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_32px_-8px_rgba(0,0,0,0.06)] transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                {/* Apple-style Currency Pill */}
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F5F5F7] border border-black/[0.05]">
+                  <CurrencyIcon currency={selectedAccount?.currency} size={18} />
+                  <span className="text-xs font-semibold text-[#1D1D1F]">
+                    {currencyInfo.code}
+                  </span>
+                </div>
+              </div>
+
+              {/* Commanding Balance Display with Adaptive Currency Placement */}
+              <div className="flex items-baseline gap-2 mb-3">
+                {currencyInfo.isPrefix && (
+                  <span className="text-3xl md:text-4xl font-light text-[#86868B] select-none">
+                    {currencyInfo.symbol}
+                  </span>
+                )}
+                <span className="text-5xl md:text-6xl lg:text-7xl font-light tracking-[-0.04em] text-[#1D1D1F] tabular-nums">
+                  {formattedBalance}
+                </span>
+                {!currencyInfo.isPrefix && (
+                  <span className="text-2xl md:text-3xl font-normal text-[#86868B] select-none ml-1.5">
+                    {currencyInfo.symbol}
+                  </span>
+                )}
+              </div>
+
+              {/* Clean Account ID Badge (Replaces raw monospace terminal font) */}
+              <div className="flex items-center gap-3 pt-2">
+                <CopyableId id={selectedAccount?.id} label="Account ID" truncate={true} />
+              </div>
+
+              {/* Send Money Pill Action */}
+              <div className="pt-8 mt-6 border-t border-black/[0.06]">
+                <Link
+                  to="/transfers"
+                  className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-[#1D1D1F] hover:bg-black text-white text-sm font-medium transition-all shadow-sm hover:shadow active:scale-[0.98] hover:ring-1 hover:ring-[#C5A059]/40"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 5 19 12 12 19" />
+                  </svg>
+                  <span>Send Money</span>
+                </Link>
+              </div>
+            </div>
+
+            {/* Real Calculated Monthly Stats */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white/80 backdrop-blur-sm border border-black/[0.06] rounded-[20px] p-6 shadow-sm">
+                <div className="text-[11px] uppercase tracking-wider text-[#86868B] font-semibold mb-1">
+                  Monthly Inflow
+                </div>
+                <div className="text-2xl font-normal tracking-tight text-[#00A855] tabular-nums">
+                  +{formatCurrencyAmount(monthlyInflow, selectedAccount?.currency)}
+                </div>
+              </div>
+
+              <div className="bg-white/80 backdrop-blur-sm border border-black/[0.06] rounded-[20px] p-6 shadow-sm">
+                <div className="text-[11px] uppercase tracking-wider text-[#86868B] font-semibold mb-1">
+                  Monthly Outflow
+                </div>
+                <div className="text-2xl font-normal tracking-tight text-[#1D1D1F] tabular-nums">
+                  -{formatCurrencyAmount(monthlyOutflow, selectedAccount?.currency)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Physical Card Showcase */}
+          <div className="lg:col-span-5 flex flex-col items-center justify-center p-8 bg-white border border-black/[0.06] rounded-[24px] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)]">
+            <div className="w-full flex items-center justify-between mb-6">
+              <span className="text-xs font-semibold uppercase tracking-wider text-[#86868B]">
+                Active Card
+              </span>
+              <span className="text-xs text-[#86868B]">
+                {primaryCard ? primaryCard.cardType : "Debit"}
+              </span>
+            </div>
+
+            {/* The Tactile Card */}
+            <PhysicalCard 
+              card={primaryCard} 
+              userName={user?.name || "Houcine Gahboub"} 
+              currency={selectedAccount?.currency || "USD"} 
+            />
+          </div>
+        </div>
+
+        {/* Recent Transactions: Only Successful Transactions */}
+        <div className="bg-white border border-black/[0.06] rounded-[24px] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] overflow-hidden">
+          <div className="p-6 md:p-8 flex items-center justify-between border-b border-black/[0.06]">
+            <div>
+              <h2 className="text-xl md:text-2xl font-normal tracking-tight text-[#1D1D1F]">
+                Activity
+              </h2>
+            </div>
+            
+            <Link
+              to="/transfers"
+              className="text-xs font-semibold text-[#0071E3] hover:text-[#0051A8] transition-colors"
+            >
+              New Transfer →
+            </Link>
+          </div>
+
+          {successfulTransactions.length > 0 ? (
+            <div className="divide-y divide-black/[0.04]">
+              {successfulTransactions.map((tx) => {
+                const isOut = tx.sourceAccountId === selectedAccount?.id;
+                const counterpartyId = isOut ? tx.destinationAccountId : tx.sourceAccountId;
+                const dateObj = new Date(tx.createdAt || 0);
+                const dateString = dateObj.toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                });
+                const timeString = dateObj.toLocaleTimeString("en-US", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                });
+
+                return (
+                  <div
+                    key={tx.id}
+                    className="p-5 md:px-8 flex items-center justify-between hover:bg-[#FBFBFD] transition-colors group"
+                  >
+                    <div className="flex items-center gap-4">
+                      {/* Direction Icon Bubble */}
+                      <div
+                        className={`w-11 h-11 rounded-full flex items-center justify-center transition-transform group-hover:scale-105 ${
+                          isOut
+                            ? "bg-[#F5F5F7] text-[#1D1D1F]"
+                            : "bg-[#00D06C]/10 text-[#00A855]"
+                        }`}
+                      >
+                        {isOut ? (
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="7" y1="17" x2="17" y2="7" />
+                            <polyline points="7 7 17 7 17 17" />
+                          </svg>
+                        ) : (
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="17" y1="7" x2="7" y2="17" />
+                            <polyline points="17 17 7 17 7 7" />
+                          </svg>
+                        )}
+                      </div>
+
+                      <div>
+                        <div className="text-sm font-medium text-[#1D1D1F]">
+                          {isOut ? "Transfer Out" : "Deposit / Transfer In"}
+                        </div>
+                        <div className="text-xs text-[#86868B] font-normal tracking-tight mt-0.5">
+                          {isOut ? "To: " : "From: "}
+                          <span className="font-medium text-[#1D1D1F]">
+                            {counterpartyId ? `${counterpartyId.slice(0, 8)}••••${counterpartyId.slice(-4)}` : "—"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <div
+                        className={`text-base font-semibold tracking-tight tabular-nums ${
+                          isOut ? "text-[#1D1D1F]" : "text-[#00A855]"
+                        }`}
+                      >
+                        {isOut ? "-" : "+"}
+                        {formatCurrencyAmount(tx.amount || 0, selectedAccount?.currency)}
+                      </div>
+                      <div className="text-[11px] text-[#86868B] mt-0.5">
+                        {dateString} at {timeString}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="py-20 text-center flex flex-col items-center justify-center">
+              <div className="w-12 h-12 rounded-full bg-[#F5F5F7] flex items-center justify-center text-[#86868B] mb-3">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+              </div>
+              <div className="text-sm font-medium text-[#1D1D1F]">No settled transactions yet</div>
+              <div className="text-xs text-[#86868B] mt-1">Completed transfers will appear here automatically.</div>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Create Account Modal Window */}
+      <CreateAccountModal
+        isOpen={isNewAccountOpen}
+        onClose={() => setIsNewAccountOpen(false)}
+        onAccountCreated={handleAccountCreated}
+      />
+    </div>
+  );
 }
