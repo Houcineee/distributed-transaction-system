@@ -67,9 +67,14 @@ public class Card extends BaseEntity {
 	}
 
 	public void activate() {
-		if (this.status == CardStatus.EXPIRED) {
+		if (this.status == CardStatus.EXPIRED || isExpired()) {
 			throw new IllegalStateException("Cannot activate an expired card");
 		}
 		this.status = CardStatus.ACTIVE;
+	}
+
+	public boolean isExpired() {
+		return this.status == CardStatus.EXPIRED
+				|| (this.expirationDate != null && LocalDate.now().isAfter(this.expirationDate));
 	}
 }

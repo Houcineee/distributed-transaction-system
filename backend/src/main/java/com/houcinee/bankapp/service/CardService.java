@@ -12,9 +12,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Random;
 import java.util.UUID;
 
 @Service
@@ -23,7 +23,7 @@ import java.util.UUID;
 public class CardService {
 	private final CardRepository cardRepository;
 	private final AccountRepository accountRepository;
-	private final Random random = new Random();
+	private final SecureRandom random = new SecureRandom();
 
 	private static final String BIN_PREFIX = "453900";
 

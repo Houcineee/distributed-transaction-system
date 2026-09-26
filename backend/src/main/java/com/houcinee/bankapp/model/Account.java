@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "accounts")
 @SQLDelete(sql = "UPDATE accounts SET enabled = false WHERE id = ?")
+@SQLRestriction("enabled = true")
 public class Account extends BaseEntity {
 	@Id
 	@GeneratedValue
