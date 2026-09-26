@@ -156,3 +156,34 @@ application independently deployable.
 The current deployment is intentionally simple and suitable for a first
 working release. Immutable image tags, health-gated rollouts, and rollback
 automation are planned operational improvements.
+
+## ADR-013: Single-Row Transfer Ledger vs. Double-Entry Bookkeeping
+
+**Status:** Accepted (Deliberate Trade-Off)
+
+The transfer engine records money movement as a single row containing `source_account_id`, `destination_account_id`, and `amount` within an atomic PostgreSQL transaction protected by deterministic lock-ordered pessimistic concurrency control (`PESSIMISTIC_WRITE`).
+
+**Production Context & Trade-Off:**
+Real-world core banking systems typically model financial transactions using an immutable double-entry ledger (a parent transaction with balanced Debit and Credit line entries). Double-entry eliminates database `OR` query bottlenecks when fetching account statements and natively accommodates multi-party flows (such as platform fees or tax withholding).
+
+**Decision Rationale:**
+For the current scope of the application (peer-to-peer account transfers), a single-row ledger model was chosen intentionally. This prioritized mastering database concurrency primitives, row-level locking, and deadlock elimination without introducing premature schema complexity.
+
+**Evolution Trigger:**
+Transitioning to a full double-entry ledger schema (`transactions` and `ledger_entries`) is planned when multi-legged financial workflows (such as fee distribution, external deposit sources, or multi-currency conversions) are introduced.
+
+## ADR-014: Issuer-Direct Card Simulation vs. PCI-DSS Compliance
+
+**Status:** Accepted (Deliberate Trade-Off)
+
+The application models payment cards directly in PostgreSQL, generating Luhn-valid card numbers, tracking expiration dates, CVVs, and managing lifecycle state machines (Active, Blocked, Expired).
+
+**Production Context & Trade-Off:**
+Commercial web applications avoid handling raw Primary Account Numbers (PAN) and CVVs directly, delegating card capture and tokenization to PCI-DSS compliant third-party payment vaults (such as Stripe Elements or Adyen) to avoid regulatory compliance overhead.
+
+**Decision Rationale:**
+The goal of this project is learning core backend systems engineering, data integrity, and cryptography from first principles, rather than integrating third-party SaaS SDKs. The application acts as the *issuing bank engine* rather than a simple merchant frontend.
+
+**Mitigation:**
+To protect sensitive card details at rest without commercial tokenization vendors, application-level AES-256-GCM encryption (`AttributeConverter`) is used to ensure sensitive attributes remain ciphertext in database snapshots and backups.
+
