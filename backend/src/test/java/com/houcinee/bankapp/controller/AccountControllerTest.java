@@ -19,6 +19,7 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -57,6 +58,8 @@ class AccountControllerTest extends BaseWebMvcTest {
 		                                        .content(objectMapper.writeValueAsString(request)))
 		       .andExpect(status().isCreated())
 		       .andExpect(jsonPath("$.balance").value("0.00"));
+
+		verify(auditService).recordAccountCreated(eq(response.getId()), eq("MAD"), any());
 	}
 
 	@Test
@@ -101,7 +104,9 @@ class AccountControllerTest extends BaseWebMvcTest {
 		when(accountService.getAccountById(accountId)).thenReturn(response);
 
 		mockMvc.perform(get("/api/v1/accounts/" + accountId).with(mockAuth(userId, "CUSTOMER")).contentType(MediaType.APPLICATION_JSON))
-		       .andExpect(status().isOk());
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("$.id").value(accountId.toString()))
+		       .andExpect(jsonPath("$.balance").value("150.00"));
 	}
 
 	@Test
@@ -125,7 +130,11 @@ class AccountControllerTest extends BaseWebMvcTest {
 	@Test
 	void givenAccountOwner_whenGetTransactionHistory_thenReturns200() throws Exception {
 		UUID accountId = UUID.randomUUID();
-		Page<TransactionResponse> page = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
+		TransactionResponse tx = TransactionResponse.builder()
+				.id(UUID.randomUUID())
+				.amount("50.00")
+				.build();
+		Page<TransactionResponse> page = new PageImpl<>(List.of(tx), PageRequest.of(0, 20), 1);
 
 		when(transactionService.getTransactionsByAccountId(eq(accountId), any())).thenReturn(page);
 		// User owns the account
@@ -134,7 +143,9 @@ class AccountControllerTest extends BaseWebMvcTest {
 		mockMvc.perform(get("/api/v1/accounts/" + accountId + "/transactions").param("page", "0")
 		                                                                      .with(mockAuth(UUID.randomUUID(), "CUSTOMER"))
 		                                                                      .contentType(MediaType.APPLICATION_JSON))
-		       .andExpect(status().isOk());
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("$.content[0].amount").value("50.00"))
+		       .andExpect(jsonPath("$.totalElements").value(1));
 	}
 
 	@Test
@@ -164,13 +175,19 @@ class AccountControllerTest extends BaseWebMvcTest {
 
         // Admin does not own the account, but shouldn't matter!
 		mockMvc.perform(get("/api/v1/accounts/" + accountId).with(mockAuth(UUID.randomUUID(), "ADMIN")).contentType(MediaType.APPLICATION_JSON))
-		       .andExpect(status().isOk());
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("$.id").value(accountId.toString()))
+		       .andExpect(jsonPath("$.balance").value("150.00"));
 	}
 
 	@Test
 	void givenAdmin_whenGetTransactionHistory_thenReturns200() throws Exception {
 		UUID accountId = UUID.randomUUID();
-		Page<TransactionResponse> page = new PageImpl<>(List.of(), PageRequest.of(0, 20), 0);
+		TransactionResponse tx = TransactionResponse.builder()
+				.id(UUID.randomUUID())
+				.amount("50.00")
+				.build();
+		Page<TransactionResponse> page = new PageImpl<>(List.of(tx), PageRequest.of(0, 20), 1);
 
 		when(transactionService.getTransactionsByAccountId(eq(accountId), any())).thenReturn(page);
 		
@@ -180,6 +197,8 @@ class AccountControllerTest extends BaseWebMvcTest {
 		mockMvc.perform(get("/api/v1/accounts/" + accountId + "/transactions").param("page", "0")
 		                                                                      .with(mockAuth(UUID.randomUUID(), "ADMIN"))
 		                                                                      .contentType(MediaType.APPLICATION_JSON))
-		       .andExpect(status().isOk());
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("$.content[0].amount").value("50.00"))
+		       .andExpect(jsonPath("$.totalElements").value(1));
 	}
 }

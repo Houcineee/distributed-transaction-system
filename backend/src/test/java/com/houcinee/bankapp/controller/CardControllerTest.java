@@ -70,13 +70,18 @@ class CardControllerTest extends BaseWebMvcTest {
 	@Test
 	void givenAccountOwner_whenGetCardsByAccountId_thenReturns200() throws Exception {
 		UUID accountId = UUID.randomUUID();
+		CardResponse card = CardResponse.builder()
+				.id(UUID.randomUUID())
+				.cardNumber("**** **** **** 7890")
+				.build();
 		when(securityService.isAccountOwner(any(), eq(accountId))).thenReturn(true);
-		when(cardService.getCardsByAccountId(accountId)).thenReturn(List.of());
+		when(cardService.getCardsByAccountId(accountId)).thenReturn(List.of(card));
 
 		mockMvc.perform(get("/api/v1/cards/account/" + accountId)
 						.with(mockAuth(UUID.randomUUID(), "CUSTOMER"))
 						.contentType(MediaType.APPLICATION_JSON))
-				.andExpect(status().isOk());
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$[0].cardNumber").value("**** **** **** 7890"));
 	}
 
 	@Test
@@ -94,7 +99,10 @@ class CardControllerTest extends BaseWebMvcTest {
 	@Test
 	void givenCardOwner_whenGetCardById_thenReturns200() throws Exception {
 		UUID cardId = UUID.randomUUID();
-		CardResponse response = CardResponse.builder().id(cardId).build();
+		CardResponse response = CardResponse.builder()
+				.id(cardId)
+				.cardNumber("**** **** **** 7890")
+				.build();
 
 		when(securityService.isCardOwner(any(), eq(cardId))).thenReturn(true);
 		when(cardService.getCardById(cardId)).thenReturn(response);
@@ -102,7 +110,9 @@ class CardControllerTest extends BaseWebMvcTest {
 		mockMvc.perform(get("/api/v1/cards/" + cardId)
 						.with(mockAuth(UUID.randomUUID(), "CUSTOMER"))
 						.contentType(MediaType.APPLICATION_JSON))
-				.andExpect(status().isOk());
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.id").value(cardId.toString()))
+				.andExpect(jsonPath("$.cardNumber").value("**** **** **** 7890"));
 	}
 
 	@Test
@@ -128,7 +138,8 @@ class CardControllerTest extends BaseWebMvcTest {
 		mockMvc.perform(patch("/api/v1/cards/" + cardId + "/block")
 						.with(mockAuth(UUID.randomUUID(), "CUSTOMER"))
 						.contentType(MediaType.APPLICATION_JSON))
-				.andExpect(status().isOk());
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.status").value("BLOCKED"));
 
 		verify(auditService).recordCardBlocked(eq(cardId), any());
 	}
@@ -144,6 +155,65 @@ class CardControllerTest extends BaseWebMvcTest {
 		mockMvc.perform(patch("/api/v1/cards/" + cardId + "/block")
 						.with(mockAuth(UUID.randomUUID(), "ADMIN")) // Is Admin
 						.contentType(MediaType.APPLICATION_JSON))
-				.andExpect(status().isOk());
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.status").value("BLOCKED"));
+
+		verify(auditService).recordCardBlocked(eq(cardId), any());
+	}
+
+	@Test
+	void givenNotCardOwner_whenBlockCard_thenReturns403() throws Exception {
+		UUID cardId = UUID.randomUUID();
+		when(securityService.isCardOwner(any(), eq(cardId))).thenReturn(false);
+
+		mockMvc.perform(patch("/api/v1/cards/" + cardId + "/block")
+						.with(mockAuth(UUID.randomUUID(), "CUSTOMER"))
+						.contentType(MediaType.APPLICATION_JSON))
+				.andExpect(status().isForbidden());
+	}
+
+	@Test
+	void givenCardOwner_whenActivateCard_thenReturns200() throws Exception {
+		UUID cardId = UUID.randomUUID();
+		CardResponse response = CardResponse.builder().id(cardId).status(CardStatus.ACTIVE).build();
+
+		when(securityService.isCardOwner(any(), eq(cardId))).thenReturn(true);
+		when(cardService.activateCard(cardId)).thenReturn(response);
+
+		mockMvc.perform(patch("/api/v1/cards/" + cardId + "/activate")
+						.with(mockAuth(UUID.randomUUID(), "CUSTOMER"))
+						.contentType(MediaType.APPLICATION_JSON))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.status").value("ACTIVE"));
+
+		verify(auditService).recordCardActivated(eq(cardId), any());
+	}
+
+	@Test
+	void givenAdmin_whenActivateCard_thenReturns200() throws Exception {
+		UUID cardId = UUID.randomUUID();
+		CardResponse response = CardResponse.builder().id(cardId).status(CardStatus.ACTIVE).build();
+
+		when(securityService.isCardOwner(any(), eq(cardId))).thenReturn(false);
+		when(cardService.activateCard(cardId)).thenReturn(response);
+
+		mockMvc.perform(patch("/api/v1/cards/" + cardId + "/activate")
+						.with(mockAuth(UUID.randomUUID(), "ADMIN"))
+						.contentType(MediaType.APPLICATION_JSON))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.status").value("ACTIVE"));
+
+		verify(auditService).recordCardActivated(eq(cardId), any());
+	}
+
+	@Test
+	void givenNotCardOwner_whenActivateCard_thenReturns403() throws Exception {
+		UUID cardId = UUID.randomUUID();
+		when(securityService.isCardOwner(any(), eq(cardId))).thenReturn(false);
+
+		mockMvc.perform(patch("/api/v1/cards/" + cardId + "/activate")
+						.with(mockAuth(UUID.randomUUID(), "CUSTOMER"))
+						.contentType(MediaType.APPLICATION_JSON))
+				.andExpect(status().isForbidden());
 	}
 }

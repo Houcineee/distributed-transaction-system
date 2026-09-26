@@ -12,6 +12,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 
 import com.houcinee.bankapp.controller.BaseWebMvcTest;
 import java.util.UUID;
@@ -77,6 +81,8 @@ public class GlobalExceptionHandlerTest extends BaseWebMvcTest {
 		       .andExpect(jsonPath("$.path").value("/test/badCredentials"))
 		       .andExpect(jsonPath("$.correlationId").exists())
 		       .andExpect(jsonPath("$.timestamp").exists());
+
+		verify(auditService).recordLoginFailure(isNull(), eq("Bad credentials"), any());
 	}
 	@Test
 	public void givenDuplicateResourceException_whenHandle_thenReturns409() throws Exception {
@@ -121,6 +127,20 @@ public class GlobalExceptionHandlerTest extends BaseWebMvcTest {
 		       .andExpect(jsonPath("$.status").value(403))
 		       .andExpect(jsonPath("$.error").value("Forbidden"))
 		       .andExpect(jsonPath("$.message").value("You do not have permission to access this resource"));
+
+		verify(auditService).recordAccessDenied(eq("/test/authorizationDenied"), any());
+	}
+
+	@Test
+	public void givenTransferFailedException_whenHandle_thenReturns400() throws Exception {
+		mockMvc.perform(get("/test/transferFailed").with(mockAuth(UUID.randomUUID(), "CUSTOMER")))
+		       .andExpect(status().isBadRequest())
+		       .andExpect(jsonPath("$.status").value(400))
+		       .andExpect(jsonPath("$.error").value("Bad Request"))
+		       .andExpect(jsonPath("$.message").value("Insufficient funds"))
+		       .andExpect(jsonPath("$.path").value("/test/transferFailed"));
+
+		verify(auditService).recordTransferFailed(any(), eq("Insufficient funds"), any());
 	}
 
 	@Test
@@ -177,6 +197,11 @@ class DummyController {
 	@GetMapping("/test/duplicateResource")
 	public void throwDuplicateResource() {
 		throw new DuplicateResourceException("Duplicate Resource");
+	}
+
+	@GetMapping("/test/transferFailed")
+	public void throwTransferFailed() {
+		throw new TransferFailedException("Insufficient funds", new com.houcinee.bankapp.dto.TransactionRequest(UUID.randomUUID(), UUID.randomUUID(), 1000L));
 	}
 
 	@GetMapping("/test/typeMismatch/{id}")

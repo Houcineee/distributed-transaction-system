@@ -19,6 +19,8 @@ import java.time.Instant;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -58,6 +60,8 @@ class AuthControllerTest extends BaseWebMvcTest {
 		       .andExpect(status().isCreated())
 		       .andExpect(jsonPath("$.name").value("Houcine"))
 		       .andExpect(jsonPath("$.email").value("houcine@test.com"));
+
+		verify(auditService).recordUserRegistered(eq(response.getId()), eq("houcine@test.com"), any());
 	}
 
 	@Test
@@ -90,6 +94,8 @@ class AuthControllerTest extends BaseWebMvcTest {
 		                                          .content(objectMapper.writeValueAsString(request)))
 		       .andExpect(status().isOk())
 		       .andExpect(cookie().value("jwt", "fake-jwt-token"));
+
+		verify(auditService).recordLoginSuccess(any());
 	}
 
 	@Test

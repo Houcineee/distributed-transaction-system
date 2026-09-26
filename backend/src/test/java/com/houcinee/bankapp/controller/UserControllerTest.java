@@ -58,15 +58,34 @@ class UserControllerTest extends BaseWebMvcTest {
 		       .andExpect(status().isBadRequest());
 	}
 
+	// --- getCurrentUser Tests ---
+	@Test
+	void givenAuthenticatedUser_whenGetCurrentUser_thenReturns200() throws Exception {
+		UUID userId = UUID.randomUUID();
+		UserResponse res = UserResponse.builder().name("test").email("test@test.com").id(userId).build();
+
+		when(userService.getUserById(userId)).thenReturn(res);
+
+		mockMvc.perform(get("/api/v1/users/me").with(mockAuth(userId, "CUSTOMER"))
+		                                       .contentType(MediaType.APPLICATION_JSON))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("$.id").value(userId.toString()))
+		       .andExpect(jsonPath("$.name").value("test"));
+	}
+
 	// --- getAccountsByUserId Tests ---
 	@Test
 	void givenSameUser_whenGetAccountsByUserId_thenReturns200() throws Exception {
 		UUID userId = UUID.randomUUID();
-		when(accountService.getAccountsByUserId(userId)).thenReturn(List.of());
+		UUID accountId = UUID.randomUUID();
+		AccountResponse account = AccountResponse.builder().id(accountId).balance("200.00").build();
+		when(accountService.getAccountsByUserId(userId)).thenReturn(List.of(account));
 
 		mockMvc.perform(get("/api/v1/users/" + userId + "/accounts").with(mockAuth(userId, "CUSTOMER"))
 		                                                            .contentType(MediaType.APPLICATION_JSON))
-		       .andExpect(status().isOk());
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("$[0].id").value(accountId.toString()))
+		       .andExpect(jsonPath("$[0].balance").value("200.00"));
 	}
 
 	@Test
@@ -97,11 +116,15 @@ class UserControllerTest extends BaseWebMvcTest {
 	@Test
 	void givenAdmin_whenGetAccountsByUserId_thenReturns200() throws Exception {
 		UUID targetUserId = UUID.randomUUID(); // Different user
-		when(accountService.getAccountsByUserId(targetUserId)).thenReturn(List.of());
+		UUID accountId = UUID.randomUUID();
+		AccountResponse account = AccountResponse.builder().id(accountId).balance("200.00").build();
+		when(accountService.getAccountsByUserId(targetUserId)).thenReturn(List.of(account));
 
         // Authenticated as an ADMIN
 		mockMvc.perform(get("/api/v1/users/" + targetUserId + "/accounts").with(mockAuth(UUID.randomUUID(), "ADMIN"))
 		                                                            .contentType(MediaType.APPLICATION_JSON))
-		       .andExpect(status().isOk());
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("$[0].id").value(accountId.toString()))
+		       .andExpect(jsonPath("$[0].balance").value("200.00"));
 	}
 }

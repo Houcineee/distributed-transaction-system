@@ -91,6 +91,102 @@ public class CardServiceTests {
     }
 
     @Test
+    public void givenValidCard_whenBlockCard_thenSetsStatusBlockedAndSaves() {
+        UUID cardId = UUID.randomUUID();
+        Account account = new Account();
+        ReflectionTestUtils.setField(account, "id", UUID.randomUUID());
+        Card card = new Card("4539001234567890", "John Doe", "123", LocalDate.now().plusYears(3), CardType.DEBIT, account);
+        ReflectionTestUtils.setField(card, "id", cardId);
+
+        when(cardRepository.findById(cardId)).thenReturn(Optional.of(card));
+
+        CardResponse response = cardService.blockCard(cardId);
+
+        assertEquals(CardStatus.BLOCKED, response.getStatus());
+        assertEquals(CardStatus.BLOCKED, card.getStatus());
+        assertEquals("**** **** **** 7890", response.getCardNumber());
+        verify(cardRepository).save(card);
+    }
+
+    @Test
+    public void givenNonExistentCard_whenBlockCard_thenThrowsResourceNotFoundException() {
+        UUID cardId = UUID.randomUUID();
+        when(cardRepository.findById(cardId)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> cardService.blockCard(cardId));
+        verify(cardRepository, never()).save(any());
+    }
+
+    @Test
+    public void givenBlockedCard_whenActivateCard_thenSetsStatusActiveAndSaves() {
+        UUID cardId = UUID.randomUUID();
+        Account account = new Account();
+        ReflectionTestUtils.setField(account, "id", UUID.randomUUID());
+        Card card = new Card("4539001234567890", "John Doe", "123", LocalDate.now().plusYears(3), CardType.DEBIT, account);
+        card.block();
+        ReflectionTestUtils.setField(card, "id", cardId);
+
+        when(cardRepository.findById(cardId)).thenReturn(Optional.of(card));
+
+        CardResponse response = cardService.activateCard(cardId);
+
+        assertEquals(CardStatus.ACTIVE, response.getStatus());
+        assertEquals(CardStatus.ACTIVE, card.getStatus());
+        assertEquals("**** **** **** 7890", response.getCardNumber());
+        verify(cardRepository).save(card);
+    }
+
+    @Test
+    public void givenNonExistentCard_whenActivateCard_thenThrowsResourceNotFoundException() {
+        UUID cardId = UUID.randomUUID();
+        when(cardRepository.findById(cardId)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> cardService.activateCard(cardId));
+        verify(cardRepository, never()).save(any());
+    }
+
+    @Test
+    public void givenNonExistentAccount_whenIssueCard_thenThrowsResourceNotFoundException() {
+        UUID accountId = UUID.randomUUID();
+        when(accountRepository.findById(accountId)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> cardService.issueCard(accountId, CardType.DEBIT));
+        verify(cardRepository, never()).save(any());
+    }
+
+    @Test
+    public void givenExistingAccount_whenGetCardsByAccountId_thenReturnsMaskedCards() {
+        UUID accountId = UUID.randomUUID();
+        Account account = new Account();
+        ReflectionTestUtils.setField(account, "id", accountId);
+        Card card = new Card("4539001234567890", "John Doe", "123", LocalDate.now().plusYears(3), CardType.DEBIT, account);
+
+        when(accountRepository.existsById(accountId)).thenReturn(true);
+        when(cardRepository.findAllByAccountId(accountId)).thenReturn(List.of(card));
+
+        List<CardResponse> cards = cardService.getCardsByAccountId(accountId);
+
+        assertEquals(1, cards.size());
+        assertEquals("**** **** **** 7890", cards.get(0).getCardNumber());
+    }
+
+    @Test
+    public void givenNonExistentAccount_whenGetCardsByAccountId_thenThrowsResourceNotFoundException() {
+        UUID accountId = UUID.randomUUID();
+        when(accountRepository.existsById(accountId)).thenReturn(false);
+
+        assertThrows(ResourceNotFoundException.class, () -> cardService.getCardsByAccountId(accountId));
+    }
+
+    @Test
+    public void givenNonExistentCard_whenGetCardById_thenThrowsResourceNotFoundException() {
+        UUID cardId = UUID.randomUUID();
+        when(cardRepository.findById(cardId)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> cardService.getCardById(cardId));
+    }
+
+    @Test
     public void whenGenerateLuhnValidCardNumber_thenPassesLuhnCheck() {
         // We will generate 100 cards to mathematically guarantee the algorithm is flawless
         for (int i = 0; i < 100; i++) {
