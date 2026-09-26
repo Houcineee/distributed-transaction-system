@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 
 import org.springframework.data.domain.Pageable;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -85,9 +84,9 @@ public class TransactionService {
 		UUID firstId = id1.compareTo(id2) < 0 ? id1 : id2;
 		UUID secondId = id1.compareTo(id2) < 0 ? id2 : id1;
 
-		Account first = accountRepository.findAccountById(firstId)
+		Account first = accountRepository.findByIdForUpdate(firstId)
 		                                 .orElseThrow(() -> new ResourceNotFoundException("Account not found: " + firstId));
-		Account second = accountRepository.findAccountById(secondId)
+		Account second = accountRepository.findByIdForUpdate(secondId)
 		                                  .orElseThrow(() -> new ResourceNotFoundException("Account not found: " + secondId));
 
 		return new Account[]{first, second};

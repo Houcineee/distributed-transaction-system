@@ -64,8 +64,8 @@ public class TransactionServiceTests {
 		Transaction dummyTransaction = new Transaction(10L, srcAccount, destAccount, COMPLETED);
 		ReflectionTestUtils.setField(dummyTransaction, "id", UUID.randomUUID());
 
-		when(accountRepository.findAccountById(srcAccount.getId())).thenReturn(Optional.of(srcAccount));
-		when(accountRepository.findAccountById(destAccount.getId())).thenReturn(Optional.of(destAccount));
+		when(accountRepository.findByIdForUpdate(srcAccount.getId())).thenReturn(Optional.of(srcAccount));
+		when(accountRepository.findByIdForUpdate(destAccount.getId())).thenReturn(Optional.of(destAccount));
 		when(transactionLoggerService.saveTransaction(10L, srcAccount, destAccount, COMPLETED)).thenReturn(dummyTransaction);
 
 		transactionService.transferMoney(srcAccount.getId(), destAccount.getId(), 10L);
@@ -85,7 +85,7 @@ public class TransactionServiceTests {
 		});
 
 		assertEquals("Source and destination accounts cannot be the same", exception.getMessage());
-		verify(accountRepository, never()).findAccountById(any());
+		verify(accountRepository, never()).findByIdForUpdate(any());
 	}
 
 	@Test
@@ -105,7 +105,7 @@ public class TransactionServiceTests {
 		UUID srcUUID = new UUID(0L, 1L);
 		UUID destUUID = new UUID(0L, 2L);
 
-		when(accountRepository.findAccountById(srcUUID)).thenReturn(Optional.empty());
+		when(accountRepository.findByIdForUpdate(srcUUID)).thenReturn(Optional.empty());
 
 		ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () -> {
 			transactionService.transferMoney(srcUUID, destUUID, 10L);
@@ -119,8 +119,8 @@ public class TransactionServiceTests {
 		Account srcAccount = createAccount(1L, 5L);
 		Account destAccount = createAccount(2L, 50L);
 
-		when(accountRepository.findAccountById(srcAccount.getId())).thenReturn(Optional.of(srcAccount));
-		when(accountRepository.findAccountById(destAccount.getId())).thenReturn(Optional.of(destAccount));
+		when(accountRepository.findByIdForUpdate(srcAccount.getId())).thenReturn(Optional.of(srcAccount));
+		when(accountRepository.findByIdForUpdate(destAccount.getId())).thenReturn(Optional.of(destAccount));
 
 		com.houcinee.bankapp.exception.TransferFailedException exception = assertThrows(com.houcinee.bankapp.exception.TransferFailedException.class, () -> {
 			transactionService.transferMoney(srcAccount.getId(), destAccount.getId(), 10L);
@@ -140,8 +140,8 @@ public class TransactionServiceTests {
 		Transaction dummyTransaction = new Transaction(10L, srcAccount, destAccount, COMPLETED);
 		ReflectionTestUtils.setField(dummyTransaction, "id", UUID.randomUUID());
 
-		when(accountRepository.findAccountById(srcAccount.getId())).thenReturn(Optional.of(srcAccount));
-		when(accountRepository.findAccountById(destAccount.getId())).thenReturn(Optional.of(destAccount));
+		when(accountRepository.findByIdForUpdate(srcAccount.getId())).thenReturn(Optional.of(srcAccount));
+		when(accountRepository.findByIdForUpdate(destAccount.getId())).thenReturn(Optional.of(destAccount));
 		when(transactionLoggerService.saveTransaction(10L, srcAccount, destAccount, COMPLETED)).thenReturn(dummyTransaction);
 
 		transactionService.transferMoney(srcAccount.getId(), destAccount.getId(), 10L);
