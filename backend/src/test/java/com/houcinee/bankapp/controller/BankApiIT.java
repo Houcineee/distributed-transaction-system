@@ -16,6 +16,7 @@ import com.houcinee.bankapp.repository.UserRepository;
 import com.houcinee.bankapp.repository.TransactionRepository;
 import com.houcinee.bankapp.service.BaseIntegrationTest;
 import com.jayway.jsonpath.JsonPath;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -23,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.orm.jpa.JpaSystemException;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -52,14 +54,12 @@ public class BankApiIT extends BaseIntegrationTest {
 	@Autowired
 	private UserRepository userRepository;
 
-	@Autowired
-	private TransactionRepository transactionRepository;
 
 	@Autowired
 	private AuditLogRepository auditLogRepository;
 
 	@Autowired
-	private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+	private JdbcTemplate jdbcTemplate;
 
 	@AfterEach
 	void tearDown() {
@@ -97,7 +97,7 @@ public class BankApiIT extends BaseIntegrationTest {
 		                                                   .amount(5000L) // $50.00
 		                                                   .build();
 
-		mockMvc.perform(post("/api/v1/transfers").header("Authorization", "Bearer " + tokenA)
+		mockMvc.perform(post("/api/v1/transfers").cookie(new Cookie("jwt", tokenA))
 		                                         .contentType(MediaType.APPLICATION_JSON)
 		                                         .content(objectMapper.writeValueAsString(transferReq)))
 		       .andExpect(status().isCreated())
@@ -105,16 +105,16 @@ public class BankApiIT extends BaseIntegrationTest {
 		       .andExpect(jsonPath("$.status").value("COMPLETED"));
 
 		// 8. Verify Balances via API
-		mockMvc.perform(get("/api/v1/accounts/" + accountAId).header("Authorization", "Bearer " + tokenA))
+		mockMvc.perform(get("/api/v1/accounts/" + accountAId).cookie(new Cookie("jwt", tokenA)))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("$.balance").value("50.00"));
 
-		mockMvc.perform(get("/api/v1/accounts/" + accountBId).header("Authorization", "Bearer " + tokenB))
+		mockMvc.perform(get("/api/v1/accounts/" + accountBId).cookie(new Cookie("jwt", tokenB)))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("$.balance").value("50.00"));
 
 		// 9. Verify Transaction History
-		mockMvc.perform(get("/api/v1/accounts/" + accountAId + "/transactions?page=0&size=10").header("Authorization", "Bearer " + tokenA))
+		mockMvc.perform(get("/api/v1/accounts/" + accountAId + "/transactions?page=0&size=10").cookie(new Cookie("jwt", tokenA)))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("$.totalElements").value(1))
 		       .andExpect(jsonPath("$.content[0].amount").value("50.00"))
@@ -147,19 +147,19 @@ public class BankApiIT extends BaseIntegrationTest {
 		                                                   .amount(5000L) // $50.00
 		                                                   .build();
 
-		mockMvc.perform(post("/api/v1/transfers").header("Authorization", "Bearer " + tokenC)
+		mockMvc.perform(post("/api/v1/transfers").cookie(new Cookie("jwt", tokenC))
 		                                         .contentType(MediaType.APPLICATION_JSON)
 		                                         .content(objectMapper.writeValueAsString(transferReq)))
 		       .andExpect(status().isBadRequest())
 		       .andExpect(jsonPath("$.message").value("Insufficient balance in source account"));
 
 		// 3. Verify Balances remained 0 (Rolled back)
-		mockMvc.perform(get("/api/v1/accounts/" + accountCId).header("Authorization", "Bearer " + tokenC))
+		mockMvc.perform(get("/api/v1/accounts/" + accountCId).cookie(new Cookie("jwt", tokenC)))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("$.balance").value("0.00"));
 
 		// 4. Verify FAILED transaction was logged
-		mockMvc.perform(get("/api/v1/accounts/" + accountCId + "/transactions").header("Authorization", "Bearer " + tokenC))
+		mockMvc.perform(get("/api/v1/accounts/" + accountCId + "/transactions").cookie(new Cookie("jwt", tokenC)))
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("$.totalElements").value(1))
 		       .andExpect(jsonPath("$.content[0].status").value("FAILED"));
@@ -179,6 +179,8 @@ public class BankApiIT extends BaseIntegrationTest {
 		                                     .name("Eve")
 		                                     .email("eve@hacker.com")
 		                                     .password(rawPassword)
+		                                     .currency(Currency.MAD)
+		                                     .cardType(com.houcinee.bankapp.enums.CardType.DEBIT)
 		                                     .build();
 
 		MvcResult result = mockMvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON)
@@ -227,12 +229,32 @@ public class BankApiIT extends BaseIntegrationTest {
 		assertTrue(exception.getCause().getCause().getMessage().contains("Compliance Violation"));
 	}
 
+	@Test
+	void givenAccountCreation_whenSuccess_thenAutoIssuesDebitCard() throws Exception {
+		// 1. Create users and accounts
+		String userId = createUser("Bob", "bob@bank.com");
+		String token = login("bob@bank.com", "secure123");
+
+		String accountId = createAccount(userId, token); 
+
+		// 2. Fetch cards for account
+		mockMvc.perform(get("/api/v1/cards/account/" + accountId).cookie(new Cookie("jwt", token)))
+		       .andExpect(status().isOk())
+		       .andExpect(jsonPath("$.length()").value(1))
+		       .andExpect(jsonPath("$[0].cardType").value("DEBIT"))
+		       // Validate masking over the wire
+		       .andExpect(jsonPath("$[0].cardNumber").value(org.hamcrest.Matchers.startsWith("**** **** **** ")))
+		       .andExpect(jsonPath("$[0].cvv").value("***"));
+	}
+
 	// --- Helpers ---
 	private String createUser(String name, String email) throws Exception {
 		RegisterRequest req = RegisterRequest.builder()
 		                                     .name(name)
 		                                     .email(email)
 		                                     .password("secure123")
+		                                     .currency(Currency.MAD)
+		                                     .cardType(com.houcinee.bankapp.enums.CardType.DEBIT)
 		                                     .build();
 		MvcResult result = mockMvc.perform(post("/api/v1/auth/register").contentType(MediaType.APPLICATION_JSON)
 		                                                                .content(objectMapper.writeValueAsString(req)))
@@ -251,16 +273,18 @@ public class BankApiIT extends BaseIntegrationTest {
 		                                                             .content(objectMapper.writeValueAsString(req)))
 		                          .andExpect(status().isOk())
 		                          .andReturn();
-		return JsonPath.read(result.getResponse()
-		                           .getContentAsString(), "$.token");
+		Cookie cookie = result.getResponse().getCookie("jwt");
+		Assertions.assertNotNull(cookie, "JWT cookie should not be null");
+		return cookie.getValue();
 	}
 
 	private String createAccount(String userId, String token) throws Exception {
 		CreateAccountRequest req = CreateAccountRequest.builder()
 		                                               .userId(UUID.fromString(userId))
 		                                               .currency(Currency.MAD)
+		                                               .cardType(com.houcinee.bankapp.enums.CardType.DEBIT)
 		                                               .build();
-		MvcResult result = mockMvc.perform(post("/api/v1/accounts").header("Authorization", "Bearer " + token)
+		MvcResult result = mockMvc.perform(post("/api/v1/accounts").cookie(new Cookie("jwt", token))
 		                                                           .contentType(MediaType.APPLICATION_JSON)
 		                                                           .content(objectMapper.writeValueAsString(req)))
 		                          .andExpect(status().isCreated())

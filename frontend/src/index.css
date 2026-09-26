@@ -1,0 +1,135 @@
+@import 'tailwindcss';
+
+@font-face {
+  font-family: 'Geist';
+  src: url('/fonts/Geist-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('/fonts/GeistMono-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --font-sans: 'Geist', -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, monospace;
+  --color-gold: #C5A059;
+  --color-gold-hover: #B59049;
+  --color-gold-light: #DFC06E;
+  --color-gold-pale: #F5E5BA;
+  --color-gold-dark: #8A6729;
+  --color-gold-soft: rgba(197, 160, 89, 0.10);
+  --color-gold-border: rgba(197, 160, 89, 0.28);
+}
+
+:root {
+  /* Cupertino Light Design System */
+  --bg-canvas: #FBFBFD;
+  --bg-surface: #FFFFFF;
+  --bg-subtle: #F5F5F7;
+  --bg-hover: #EBEBED;
+  
+  --ink-primary: #1D1D1F;
+  --ink-secondary: #86868B;
+  --ink-tertiary: #A1A1A6;
+  
+  --accent-gold: #C5A059;
+  --accent-gold-soft: rgba(197, 160, 89, 0.10);
+  --accent-gold-border: rgba(197, 160, 89, 0.28);
+  --accent-gold-dark: #8A6729;
+  
+  --accent-green: #00D06C;
+  --accent-green-soft: rgba(0, 208, 108, 0.12);
+  --accent-blue: #0071E3;
+  --accent-blue-soft: rgba(0, 113, 227, 0.08);
+  
+  --border-hairline: rgba(0, 0, 0, 0.07);
+  --border-subtle: #E5E5EA;
+  
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.04), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+  --shadow-elevated: 0 20px 40px -15px rgba(0, 0, 0, 0.08), 0 0 1px rgba(0, 0, 0, 0.12);
+  --shadow-card-tactile: 0 25px 50px -12px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+html, body, #root {
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-canvas);
+  color: var(--ink-primary);
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.012em;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Tabular numbers for financial balance data */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Scrollbar refinement */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* Layout Shell */
+.app-shell {
+  min-height: 100vh;
+  background-color: var(--bg-canvas);
+}
+
+@media (min-width: 768px) {
+  .app-shell {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+  }
+}
+
+.app-main {
+  padding: 1.25rem 1.25rem 6.5rem 1.25rem;
+  overflow-y: auto;
+  background-color: var(--bg-canvas);
+}
+
+@media (min-width: 768px) {
+  .app-main {
+    padding: 2.75rem 3.5rem;
+  }
+}
+
+/* Glass Card */
+.apple-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-hairline);
+  border-radius: 18px;
+  box-shadow: var(--shadow-card);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-card:hover {
+  box-shadow: var(--shadow-elevated);
+  transform: translateY(-1px);
+}

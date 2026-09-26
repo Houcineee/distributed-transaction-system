@@ -13,6 +13,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -20,6 +21,7 @@ import java.util.UUID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -38,6 +40,8 @@ class AuthControllerTest extends BaseWebMvcTest {
 		                                         .name("Houcine")
 		                                         .email("houcine@test.com")
 		                                         .password("secure123")
+		                                         .currency(com.houcinee.bankapp.enums.Currency.MAD)
+		                                         .cardType(com.houcinee.bankapp.enums.CardType.DEBIT)
 		                                         .build();
 
 		UserResponse response = UserResponse.builder()
@@ -70,7 +74,7 @@ class AuthControllerTest extends BaseWebMvcTest {
 	}
 
 	@Test
-	void givenValidLoginRequest_whenLogin_thenReturns200AndToken() throws Exception {
+	void givenValidLoginRequest_whenLogin_thenReturns200AndTokenCookie() throws Exception {
 		LoginRequest request = LoginRequest.builder()
 		                                   .email("houcine@test.com")
 		                                   .password("secure123")
@@ -85,7 +89,14 @@ class AuthControllerTest extends BaseWebMvcTest {
 		mockMvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON)
 		                                          .content(objectMapper.writeValueAsString(request)))
 		       .andExpect(status().isOk())
-		       .andExpect(jsonPath("$.token").value("fake-jwt-token"));
+		       .andExpect(cookie().value("jwt", "fake-jwt-token"));
+	}
+
+	@Test
+	void givenLogoutRequest_whenLogout_thenReturns200AndClearsCookie() throws Exception {
+		mockMvc.perform(post("/api/v1/auth/logout"))
+		       .andExpect(status().isOk())
+		       .andExpect(cookie().maxAge("jwt", 0));
 	}
 
 	@Test

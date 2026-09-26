@@ -1,5 +1,6 @@
 package com.houcinee.bankapp.dto;
 
+import com.houcinee.bankapp.enums.CardType;
 import com.houcinee.bankapp.enums.Currency;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -18,4 +19,6 @@ public class CreateAccountRequest {
 	private UUID userId ;
 	@NotNull
 	private Currency currency ;
+	@NotNull
+	private CardType cardType;
 }

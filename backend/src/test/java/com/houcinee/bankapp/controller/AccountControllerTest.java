@@ -4,7 +4,6 @@ import com.houcinee.bankapp.dto.AccountResponse;
 import com.houcinee.bankapp.dto.CreateAccountRequest;
 import com.houcinee.bankapp.dto.TransactionResponse;
 import com.houcinee.bankapp.enums.Currency;
-import com.houcinee.bankapp.enums.TransactionStatus;
 import com.houcinee.bankapp.service.AccountService;
 import com.houcinee.bankapp.service.TransactionService;
 import org.junit.jupiter.api.Test;
@@ -15,7 +14,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -43,6 +41,7 @@ class AccountControllerTest extends BaseWebMvcTest {
 		CreateAccountRequest request = CreateAccountRequest.builder()
 		                                                   .userId(userId)
 		                                                   .currency(Currency.MAD)
+		                                                   .cardType(com.houcinee.bankapp.enums.CardType.DEBIT)
 		                                                   .build();
 
 		AccountResponse response = AccountResponse.builder()
@@ -67,6 +66,7 @@ class AccountControllerTest extends BaseWebMvcTest {
 		CreateAccountRequest request = CreateAccountRequest.builder()
 		                                                   .userId(targetUserId)
 		                                                   .currency(Currency.MAD)
+		                                                   .cardType(com.houcinee.bankapp.enums.CardType.DEBIT)
 		                                                   .build();
 
 		mockMvc.perform(post("/api/v1/accounts").with(mockAuth(loggedInUserId, "CUSTOMER")).contentType(MediaType.APPLICATION_JSON)

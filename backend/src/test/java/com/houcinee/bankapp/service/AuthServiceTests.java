@@ -27,6 +27,9 @@ public class AuthServiceTests {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private AccountService accountService;
+
     @InjectMocks
     private AuthService authService;
 
@@ -42,6 +45,8 @@ public class AuthServiceTests {
                 .email(email)
                 .name(name)
                 .password(rawPassword)
+                .currency(com.houcinee.bankapp.enums.Currency.MAD)
+                .cardType(com.houcinee.bankapp.enums.CardType.DEBIT)
                 .build();
 
         UserResponse mockResponse = UserResponse.builder()
@@ -59,6 +64,7 @@ public class AuthServiceTests {
         // Assert
         verify(passwordEncoder).encode(rawPassword);
         verify(userService).createUser(name, email, hashedPassword, Role.CUSTOMER);
+        verify(accountService).createAccount(any());
         
         assertEquals(mockResponse.getId(), response.getId());
         assertEquals(mockResponse.getName(), response.getName());

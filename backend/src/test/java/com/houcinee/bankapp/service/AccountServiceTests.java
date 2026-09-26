@@ -3,6 +3,7 @@ package com.houcinee.bankapp.service;
 
 import com.houcinee.bankapp.dto.AccountResponse;
 import com.houcinee.bankapp.dto.CreateAccountRequest;
+import com.houcinee.bankapp.enums.CardType;
 import com.houcinee.bankapp.enums.Currency;
 import com.houcinee.bankapp.enums.Role;
 import com.houcinee.bankapp.model.AppUser;
@@ -28,6 +29,9 @@ import com.houcinee.bankapp.model.Account;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,6 +40,8 @@ public class AccountServiceTests {
 	private AccountRepository accountRepository;
 	@Mock
 	private UserRepository userRepository;
+	@Mock
+	private CardService cardService;
 	@InjectMocks
 	private AccountService accountService;
 
@@ -50,12 +56,20 @@ public class AccountServiceTests {
 		                                                          .build();
 
 		when(userRepository.findById(appUser.getId())).thenReturn(Optional.of(appUser));
+		when(accountRepository.save(any(Account.class))).thenAnswer(invocation -> {
+			Account acc = invocation.getArgument(0);
+			ReflectionTestUtils.setField(acc, "id", UUID.randomUUID());
+			return acc;
+		});
 
 		AccountResponse accountResponse = accountService.createAccount(accountRequest);
 
 
 		assertEquals("0.00", accountResponse.getBalance());
 		assertEquals(appUser.getId(), accountResponse.getUserId());
+
+		// Verify that a DEBIT card was automatically issued for the new account
+		verify(cardService).issueCard(any(UUID.class), eq(CardType.DEBIT));
 	}
 
 	@Test
@@ -130,10 +144,10 @@ public class AccountServiceTests {
 	@Test
 	public void givenPageable_whenGetAllAccounts_thenReturnsPagedAccountResponses() {
 		Pageable pageable = PageRequest.of(0, 10);
-		
+
 		AppUser appUser = new AppUser("test", "test@test.com", "password", Role.ADMIN);
 		ReflectionTestUtils.setField(appUser, "id", UUID.randomUUID());
-		
+
 		Account account = new Account(1000L, Currency.MAD, appUser);
 		ReflectionTestUtils.setField(account, "id", UUID.randomUUID());
 
@@ -144,6 +158,8 @@ public class AccountServiceTests {
 		Page<AccountResponse> responsePage = accountService.getAllAccounts(pageable);
 
 		assertEquals(1, responsePage.getTotalElements());
-		assertEquals("10.00", responsePage.getContent().getFirst().getBalance());
+		assertEquals("10.00", responsePage.getContent()
+		                                  .getFirst()
+		                                  .getBalance());
 	}
 }

@@ -8,8 +8,16 @@ services:
       - SPRING_DATASOURCE_USERNAME=${DB_USER}
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - APP_CORS_ALLOWED_ORIGINS=${APP_CORS_ALLOWED_ORIGINS}
+      - APP_SECURITY_COOKIE_SECURE=${APP_SECURITY_COOKIE_SECURE}
     depends_on:
       - db_service
+
+  frontend:
+    image: ghcr.io/houcineee/bank-frontend:latest
+    restart: always
+    depends_on:
+      - api
 
   db_service:
     image: postgres:17
@@ -32,6 +40,7 @@ services:
       - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - api
+      - frontend
 
   prometheus:
     image: prom/prometheus:latest

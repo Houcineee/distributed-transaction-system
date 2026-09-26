@@ -1,0 +1,12 @@
+{
+  "framework": "React 19 + TypeScript + Vite",
+  "styling": "Tailwind v4 via frontend/src/index.css",
+  "motion": "CSS-only",
+  "font_stack": "IBM Plex Sans body, IBM Plex Mono display and outlier",
+  "preserved": [
+    "existing route tree",
+    "typed OpenAPI client",
+    "frontend work predating the previous assistant pass"
+  ],
+  "last_scan": "2026-09-24"
+}

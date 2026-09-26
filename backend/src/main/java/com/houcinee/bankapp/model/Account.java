@@ -44,6 +44,9 @@ public class Account extends BaseEntity {
 	@OneToMany(mappedBy = "destAccount")
 	private List<Transaction> destinationTransactions;
 
+	@OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<Card> cards;
+
 	public Account(Long balance, Currency currency, AppUser appUser) {
 		this.balance = balance;
 		this.currency = currency;

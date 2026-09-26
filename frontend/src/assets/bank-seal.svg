@@ -1,0 +1,7 @@
+<svg width="240" height="240" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="120" cy="120" r="94" stroke="oklch(47% .145 158)" stroke-opacity=".3"/>
+  <circle cx="120" cy="120" r="78" stroke="oklch(47% .145 158)" stroke-opacity=".6" stroke-dasharray="1 8"/>
+  <path d="M120 55L130 106L181 116L130 126L120 177L110 126L59 116L110 106L120 55Z" stroke="oklch(19% .025 145)" stroke-width="1.5"/>
+  <circle cx="120" cy="116" r="12" fill="oklch(47% .145 158)"/>
+  <path d="M120 108V124M112 116H128" stroke="oklch(97% .012 145)" stroke-width="1.5"/>
+</svg>

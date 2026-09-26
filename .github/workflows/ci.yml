@@ -1,4 +1,4 @@
-name: Java CI/CD Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
@@ -22,6 +22,17 @@ jobs:
       working-directory: backend
       env:
         JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    - name: Build and Test Frontend
+      run: |
+        npm ci --legacy-peer-deps
+        npm run build -- --mode production
+      working-directory: frontend
 
   publish:
     needs: test
@@ -42,15 +53,26 @@ jobs:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-    - name: Build and push Docker image
+    - name: Build and push Backend Docker image
       uses: docker/build-push-action@v5
       with:
         context: ./backend
         push: true
         platforms: linux/arm64
         tags: ghcr.io/houcineee/bank-app:latest
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+        cache-from: type=gha,scope=backend
+        cache-to: type=gha,mode=max,scope=backend
+    - name: Build and push Frontend Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./frontend
+        push: true
+        platforms: linux/arm64
+        build-args: |
+          MODE=production
+        tags: ghcr.io/houcineee/bank-frontend:latest
+        cache-from: type=gha,scope=frontend
+        cache-to: type=gha,mode=max,scope=frontend
 
   deploy:
     needs: publish
@@ -71,6 +93,8 @@ jobs:
           echo "DB_USER=${{ secrets.PROD_DB_USER }}" > .env
           echo "DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}" >> .env
           echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> .env
+          echo "APP_CORS_ALLOWED_ORIGINS=https://bank.houcinee.tech" >> .env
+          echo "APP_SECURITY_COOKIE_SECURE=true" >> .env
           
           # Fetch production compose file
           curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
