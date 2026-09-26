@@ -18,5 +18,5 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
 
 	List<Account> findAllByAppUserId(UUID id);
 
-
+	boolean existsByIdAndAppUserId(UUID id, UUID userId);
 }

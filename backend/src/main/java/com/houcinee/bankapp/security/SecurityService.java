@@ -22,9 +22,7 @@ public class SecurityService {
 
         UUID currentUserId = (UUID) authentication.getPrincipal();
 
-        return accountRepository.findById(accountId)
-                .map(account -> account.getAppUser().getId().equals(currentUserId))
-                .orElse(false);
+        return accountRepository.existsByIdAndAppUserId(accountId, currentUserId);
     }
 
     public boolean isCardOwner(Authentication authentication, UUID cardId) {
@@ -34,8 +32,6 @@ public class SecurityService {
 
         UUID currentUserId = (UUID) authentication.getPrincipal();
 
-        return cardRepository.findById(cardId)
-                .map(card -> card.getAccount().getAppUser().getId().equals(currentUserId))
-                .orElse(false);
+        return cardRepository.existsByIdAndAccountAppUserId(cardId, currentUserId);
     }
 }

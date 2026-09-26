@@ -62,7 +62,7 @@ class SecurityServiceTest {
         when(auth.getPrincipal()).thenReturn(loggedInUserId);
 
         UUID accountId = UUID.randomUUID();
-        when(accountRepository.findById(accountId)).thenReturn(Optional.empty());
+        when(accountRepository.existsByIdAndAppUserId(accountId, loggedInUserId)).thenReturn(false);
 
         boolean result = securityService.isAccountOwner(auth, accountId);
         
@@ -77,14 +77,7 @@ class SecurityServiceTest {
         when(auth.getPrincipal()).thenReturn(loggedInUserId);
 
         UUID accountId = UUID.randomUUID();
-        
-        AppUser differentUser = new AppUser();
-        ReflectionTestUtils.setField(differentUser, "id", UUID.randomUUID());
-        
-        Account account = new Account();
-        ReflectionTestUtils.setField(account, "appUser", differentUser);
-
-        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
+        when(accountRepository.existsByIdAndAppUserId(accountId, loggedInUserId)).thenReturn(false);
 
         boolean result = securityService.isAccountOwner(auth, accountId);
         
@@ -99,14 +92,7 @@ class SecurityServiceTest {
         when(auth.getPrincipal()).thenReturn(loggedInUserId);
 
         UUID accountId = UUID.randomUUID();
-        
-        AppUser sameUser = new AppUser();
-        ReflectionTestUtils.setField(sameUser, "id", loggedInUserId);
-        
-        Account account = new Account();
-        ReflectionTestUtils.setField(account, "appUser", sameUser);
-
-        when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
+        when(accountRepository.existsByIdAndAppUserId(accountId, loggedInUserId)).thenReturn(true);
 
         boolean result = securityService.isAccountOwner(auth, accountId);
         
@@ -136,10 +122,11 @@ class SecurityServiceTest {
     void givenCardDoesNotExist_whenIsCardOwner_thenReturnsFalse() {
         Authentication auth = mock(Authentication.class);
         when(auth.isAuthenticated()).thenReturn(true);
-        when(auth.getPrincipal()).thenReturn(UUID.randomUUID());
+        UUID loggedInUserId = UUID.randomUUID();
+        when(auth.getPrincipal()).thenReturn(loggedInUserId);
 
         UUID cardId = UUID.randomUUID();
-        when(cardRepository.findById(cardId)).thenReturn(Optional.empty());
+        when(cardRepository.existsByIdAndAccountAppUserId(cardId, loggedInUserId)).thenReturn(false);
 
         boolean result = securityService.isCardOwner(auth, cardId);
 
@@ -153,17 +140,8 @@ class SecurityServiceTest {
         UUID loggedInUserId = UUID.randomUUID();
         when(auth.getPrincipal()).thenReturn(loggedInUserId);
 
-        AppUser differentUser = new AppUser();
-        ReflectionTestUtils.setField(differentUser, "id", UUID.randomUUID());
-
-        Account account = new Account();
-        ReflectionTestUtils.setField(account, "appUser", differentUser);
-
-        Card card = new Card();
-        ReflectionTestUtils.setField(card, "account", account);
-
         UUID cardId = UUID.randomUUID();
-        when(cardRepository.findById(cardId)).thenReturn(Optional.of(card));
+        when(cardRepository.existsByIdAndAccountAppUserId(cardId, loggedInUserId)).thenReturn(false);
 
         boolean result = securityService.isCardOwner(auth, cardId);
 
@@ -177,17 +155,8 @@ class SecurityServiceTest {
         UUID loggedInUserId = UUID.randomUUID();
         when(auth.getPrincipal()).thenReturn(loggedInUserId);
 
-        AppUser sameUser = new AppUser();
-        ReflectionTestUtils.setField(sameUser, "id", loggedInUserId);
-
-        Account account = new Account();
-        ReflectionTestUtils.setField(account, "appUser", sameUser);
-
-        Card card = new Card();
-        ReflectionTestUtils.setField(card, "account", account);
-
         UUID cardId = UUID.randomUUID();
-        when(cardRepository.findById(cardId)).thenReturn(Optional.of(card));
+        when(cardRepository.existsByIdAndAccountAppUserId(cardId, loggedInUserId)).thenReturn(true);
 
         boolean result = securityService.isCardOwner(auth, cardId);
 
