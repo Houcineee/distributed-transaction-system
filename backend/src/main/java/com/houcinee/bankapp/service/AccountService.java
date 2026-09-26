@@ -13,12 +13,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 
 @Service
 @Slf4j
+@Transactional(readOnly = true)
 public class AccountService {
 	private final AccountRepository accountRepository ;
 	private final UserRepository userRepository;
@@ -31,6 +33,7 @@ public class AccountService {
 	}
 
 
+	@Transactional
 	public AccountResponse createAccount(CreateAccountRequest req) {
 		log.info("Creating account for user: {}", req.getUserId());
 

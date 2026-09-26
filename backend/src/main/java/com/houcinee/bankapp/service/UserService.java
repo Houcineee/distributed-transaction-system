@@ -8,6 +8,7 @@ import com.houcinee.bankapp.model.AppUser;
 import com.houcinee.bankapp.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -15,6 +16,7 @@ import com.houcinee.bankapp.enums.Role;
 
 @Service
 @Slf4j
+@Transactional(readOnly = true)
 public class UserService {
 	private final UserRepository userRepository;
 
@@ -22,6 +24,7 @@ public class UserService {
 		this.userRepository = userRepository;
 	}
 
+	@Transactional
 	public UserResponse createUser(String name, String email, String hashedPassword, Role role) {
 		log.info("Attempting to create user with email: {}", email);
 

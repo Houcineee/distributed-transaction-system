@@ -10,7 +10,7 @@ import com.houcinee.bankapp.model.Account;
 import com.houcinee.bankapp.model.Transaction;
 import com.houcinee.bankapp.repository.AccountRepository;
 import com.houcinee.bankapp.repository.TransactionRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
@@ -22,6 +22,7 @@ import java.util.UUID;
 
 @Service
 @Slf4j
+@Transactional(readOnly = true)
 public class TransactionService {
 	private final AccountRepository accountRepository;
 	private final TransactionLoggerService transactionLoggerService;

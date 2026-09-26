@@ -10,6 +10,7 @@ import com.houcinee.bankapp.repository.AccountRepository;
 import com.houcinee.bankapp.repository.CardRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -18,6 +19,7 @@ import java.util.UUID;
 
 @Service
 @Slf4j
+@Transactional(readOnly = true)
 public class CardService {
 	private final CardRepository cardRepository;
 	private final AccountRepository accountRepository;
@@ -30,6 +32,7 @@ public class CardService {
 		this.accountRepository = accountRepository;
 	}
 
+	@Transactional
 	public CardResponse issueCard(UUID accountId, CardType cardType) {
 		log.info("Issuing {} card for account: {}", cardType, accountId);
 
@@ -72,6 +75,7 @@ public class CardService {
 		return toMaskedCardResponse(card);
 	}
 
+	@Transactional
 	public CardResponse blockCard(UUID cardId) {
 		log.info("Blocking card: {}", cardId);
 		Card card = cardRepository.findById(cardId)
@@ -82,6 +86,7 @@ public class CardService {
 		return toMaskedCardResponse(card);
 	}
 
+	@Transactional
 	public CardResponse activateCard(UUID cardId) {
 		log.info("Activating card: {}", cardId);
 		Card card = cardRepository.findById(cardId)
