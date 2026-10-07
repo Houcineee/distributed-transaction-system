@@ -24,6 +24,16 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [isNewAccountOpen, setIsNewAccountOpen] = useState(false);
 
+  // Activity Pagination State
+  const [txPage, setTxPage] = useState(0);
+  const [txPageSize] = useState(10);
+  const [txTotalPages, setTxTotalPages] = useState(1);
+  const [txTotalElements, setTxTotalElements] = useState(0);
+  const [txIsLast, setTxIsLast] = useState(true);
+  const [txLoading, setTxLoading] = useState(false);
+
+  const [summaryTransactions, setSummaryTransactions] = useState<TransactionResponse[]>([]);
+
   useEffect(() => {
     if (!user?.id) return;
     async function fetchAccounts() {
@@ -42,34 +52,78 @@ export function DashboardPage() {
     fetchAccounts();
   }, [user]);
 
+  // Reset page to 0 when selected account changes
+  useEffect(() => {
+    setTxPage(0);
+  }, [selectedAccountId]);
+
+  // Fetch cards and summary transactions for monthly stats
   useEffect(() => {
     if (!selectedAccountId) return;
     const accountId = selectedAccountId;
-    async function fetchDetails() {
-      const [{ data: cardData }, { data: txData }] = await Promise.all([
-        client.GET("/api/v1/cards/account/{accountId}", {
-          params: { path: { accountId } },
-        }),
-        client.GET("/api/v1/accounts/{id}/transactions", {
-          params: { path: { id: accountId }, query: { pageable: { page: 0, size: 50 } } },
-        }),
-      ]);
-      setCards(cardData || []);
-      setTransactions(txData?.content || []);
+    async function fetchAccountDetails() {
+      try {
+        const [{ data: cardData }, { data: summaryData }] = await Promise.all([
+          client.GET("/api/v1/cards/account/{accountId}", {
+            params: { path: { accountId } },
+          }),
+          client.GET("/api/v1/accounts/{id}/transactions", {
+            params: { path: { id: accountId }, query: { pageable: { page: 0, size: 100 } } },
+          }),
+        ]);
+        setCards(cardData || []);
+        setSummaryTransactions(summaryData?.content || []);
+      } catch (err) {
+        console.error("Failed to fetch account overview details", err);
+      }
     }
-    fetchDetails().catch(console.error);
+    fetchAccountDetails();
   }, [selectedAccountId]);
+
+  // Fetch paginated transactions for selected account and page
+  useEffect(() => {
+    if (!selectedAccountId) return;
+    const accountId = selectedAccountId;
+    let isMounted = true;
+    async function fetchTx() {
+      setTxLoading(true);
+      try {
+        const { data } = await client.GET("/api/v1/accounts/{id}/transactions", {
+          params: {
+            path: { id: accountId },
+            query: { pageable: { page: txPage, size: txPageSize } },
+          },
+        });
+        if (isMounted && data) {
+          setTransactions(data.content || []);
+          setTxTotalPages(data.totalPages ?? 1);
+          setTxTotalElements(data.totalElements ?? 0);
+          setTxIsLast(Boolean(data.last));
+        }
+      } catch (err) {
+        console.error("Failed to fetch transactions", err);
+      } finally {
+        if (isMounted) {
+          setTxLoading(false);
+        }
+      }
+    }
+    fetchTx();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedAccountId, txPage, txPageSize]);
 
   const selectedAccount = accounts.find((acc) => acc.id === selectedAccountId) || accounts[0];
   const primaryCard = cards[0];
   const currencyInfo = getCurrencyDetails(selectedAccount?.currency);
 
-  // Only show COMPLETED (succeeded) transactions
+  // Only show COMPLETED (succeeded) transactions in activity table
   const successfulTransactions = useMemo(() => {
     return transactions.filter((tx) => tx.status === "COMPLETED");
   }, [transactions]);
 
-  // Compute real monthly inflow and outflow from successful transactions
+  // Compute real monthly inflow and outflow from account summary transactions (independent of active page)
   const { monthlyInflow, monthlyOutflow } = useMemo(() => {
     if (!selectedAccount?.id) return { monthlyInflow: 0, monthlyOutflow: 0 };
     
@@ -80,22 +134,24 @@ export function DashboardPage() {
     let inflow = 0;
     let outflow = 0;
 
-    successfulTransactions.forEach((tx) => {
-      const txDate = tx.createdAt ? new Date(tx.createdAt) : null;
-      const isThisMonth = txDate && txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear;
-      
-      if (isThisMonth) {
-        const amount = Number(tx.amount || 0);
-        if (tx.destinationAccountId === selectedAccount.id) {
-          inflow += amount;
-        } else if (tx.sourceAccountId === selectedAccount.id) {
-          outflow += amount;
+    summaryTransactions
+      .filter((tx) => tx.status === "COMPLETED")
+      .forEach((tx) => {
+        const txDate = tx.createdAt ? new Date(tx.createdAt) : null;
+        const isThisMonth = txDate && txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear;
+        
+        if (isThisMonth) {
+          const amount = Number(tx.amount || 0);
+          if (tx.destinationAccountId === selectedAccount.id) {
+            inflow += amount;
+          } else if (tx.sourceAccountId === selectedAccount.id) {
+            outflow += amount;
+          }
         }
-      }
-    });
+      });
 
     return { monthlyInflow: inflow, monthlyOutflow: outflow };
-  }, [successfulTransactions, selectedAccount]);
+  }, [summaryTransactions, selectedAccount]);
 
   if (loading) {
     return (
@@ -263,10 +319,15 @@ export function DashboardPage() {
         {/* Recent Transactions: Only Successful Transactions */}
         <div className="bg-white border border-black/[0.06] rounded-[24px] shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] overflow-hidden">
           <div className="p-6 md:p-8 flex items-center justify-between border-b border-black/[0.06]">
-            <div>
+            <div className="flex items-baseline gap-3">
               <h2 className="text-xl md:text-2xl font-normal tracking-tight text-[#1D1D1F]">
                 Activity
               </h2>
+              {txTotalElements > 0 && (
+                <span className="text-xs text-[#86868B] font-medium tracking-tight">
+                  ({txTotalElements} {txTotalElements === 1 ? "transaction" : "transactions"})
+                </span>
+              )}
             </div>
             
             <Link
@@ -277,78 +338,113 @@ export function DashboardPage() {
             </Link>
           </div>
 
-          {successfulTransactions.length > 0 ? (
-            <div className="divide-y divide-black/[0.04]">
-              {successfulTransactions.map((tx) => {
-                const isOut = tx.sourceAccountId === selectedAccount?.id;
-                const counterpartyId = isOut ? tx.destinationAccountId : tx.sourceAccountId;
-                const dateObj = new Date(tx.createdAt || 0);
-                const dateString = dateObj.toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                });
-                const timeString = dateObj.toLocaleTimeString("en-US", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                });
-
-                return (
-                  <div
-                    key={tx.id}
-                    className="p-5 md:px-8 flex items-center justify-between hover:bg-[#FBFBFD] transition-colors group"
-                  >
-                    <div className="flex items-center gap-4">
-                      {/* Direction Icon Bubble */}
-                      <div
-                        className={`w-11 h-11 rounded-full flex items-center justify-center transition-transform group-hover:scale-105 ${
-                          isOut
-                            ? "bg-[#F5F5F7] text-[#1D1D1F]"
-                            : "bg-[#00D06C]/10 text-[#00A855]"
-                        }`}
-                      >
-                        {isOut ? (
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="7" y1="17" x2="17" y2="7" />
-                            <polyline points="7 7 17 7 17 17" />
-                          </svg>
-                        ) : (
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="17" y1="7" x2="7" y2="17" />
-                            <polyline points="17 17 7 17 7 7" />
-                          </svg>
-                        )}
-                      </div>
-
-                      <div>
-                        <div className="text-sm font-medium text-[#1D1D1F]">
-                          {isOut ? "Transfer Out" : "Deposit / Transfer In"}
-                        </div>
-                        <div className="text-xs text-[#86868B] font-normal tracking-tight mt-0.5">
-                          {isOut ? "To: " : "From: "}
-                          <span className="font-medium text-[#1D1D1F]">
-                            {counterpartyId ? `${counterpartyId.slice(0, 8)}••••${counterpartyId.slice(-4)}` : "—"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="text-right">
-                      <div
-                        className={`text-base font-semibold tracking-tight tabular-nums ${
-                          isOut ? "text-[#1D1D1F]" : "text-[#00A855]"
-                        }`}
-                      >
-                        {isOut ? "-" : "+"}
-                        {formatCurrencyAmount(tx.amount || 0, selectedAccount?.currency)}
-                      </div>
-                      <div className="text-[11px] text-[#86868B] mt-0.5">
-                        {dateString} at {timeString}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+          {txLoading ? (
+            <div className="py-20 flex flex-col items-center justify-center gap-3">
+              <div className="w-6 h-6 rounded-full border-2 border-black/10 border-t-[#1D1D1F] animate-spin" />
+              <span className="text-xs text-[#86868B]">Loading transactions...</span>
             </div>
+          ) : successfulTransactions.length > 0 ? (
+            <>
+              <div className="divide-y divide-black/[0.04]">
+                {successfulTransactions.map((tx) => {
+                  const isOut = tx.sourceAccountId === selectedAccount?.id;
+                  const counterpartyId = isOut ? tx.destinationAccountId : tx.sourceAccountId;
+                  const dateObj = new Date(tx.createdAt || 0);
+                  const dateString = dateObj.toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  });
+                  const timeString = dateObj.toLocaleTimeString("en-US", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
+
+                  return (
+                    <div
+                      key={tx.id}
+                      className="p-5 md:px-8 flex items-center justify-between hover:bg-[#FBFBFD] transition-colors group"
+                    >
+                      <div className="flex items-center gap-4">
+                        {/* Direction Icon Bubble */}
+                        <div
+                          className={`w-11 h-11 rounded-full flex items-center justify-center transition-transform group-hover:scale-105 ${
+                            isOut
+                              ? "bg-[#F5F5F7] text-[#1D1D1F]"
+                              : "bg-[#00D06C]/10 text-[#00A855]"
+                          }`}
+                        >
+                          {isOut ? (
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                              <line x1="7" y1="17" x2="17" y2="7" />
+                              <polyline points="7 7 17 7 17 17" />
+                            </svg>
+                          ) : (
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                              <line x1="17" y1="7" x2="7" y2="17" />
+                              <polyline points="17 17 7 17 7 7" />
+                            </svg>
+                          )}
+                        </div>
+
+                        <div>
+                          <div className="text-sm font-medium text-[#1D1D1F]">
+                            {isOut ? "Transfer Out" : "Deposit / Transfer In"}
+                          </div>
+                          <div className="text-xs text-[#86868B] font-normal tracking-tight mt-0.5">
+                            {isOut ? "To: " : "From: "}
+                            <span className="font-medium text-[#1D1D1F]">
+                              {counterpartyId ? `${counterpartyId.slice(0, 8)}••••${counterpartyId.slice(-4)}` : "—"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <div
+                          className={`text-base font-semibold tracking-tight tabular-nums ${
+                            isOut ? "text-[#1D1D1F]" : "text-[#00A855]"
+                          }`}
+                        >
+                          {isOut ? "-" : "+"}
+                          {formatCurrencyAmount(tx.amount || 0, selectedAccount?.currency)}
+                        </div>
+                        <div className="text-[11px] text-[#86868B] mt-0.5">
+                          {dateString} at {timeString}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Activity Pagination Controls */}
+              {txTotalPages > 1 && (
+                <div className="p-4 md:px-8 border-t border-black/[0.06] bg-[#FBFBFD] flex items-center justify-between text-xs">
+                  <span className="text-[#86868B] font-medium">
+                    Page {txPage + 1} of {Math.max(1, txTotalPages)}
+                  </span>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setTxPage((p) => Math.max(0, p - 1))}
+                      disabled={txPage === 0 || txLoading}
+                      className="px-3 py-1.5 rounded-lg border border-black/[0.08] bg-white text-xs font-medium text-[#1D1D1F] hover:bg-black/[0.02] active:bg-black/[0.04] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors shadow-2xs"
+                    >
+                      ← Previous
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTxPage((p) => p + 1)}
+                      disabled={txIsLast || txLoading}
+                      className="px-3 py-1.5 rounded-lg border border-black/[0.08] bg-white text-xs font-medium text-[#1D1D1F] hover:bg-black/[0.02] active:bg-black/[0.04] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors shadow-2xs"
+                    >
+                      Next →
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
             <div className="py-20 text-center flex flex-col items-center justify-center">
               <div className="w-12 h-12 rounded-full bg-[#F5F5F7] flex items-center justify-center text-[#86868B] mb-3">

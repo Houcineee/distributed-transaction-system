@@ -14,6 +14,6 @@ import java.util.UUID;
 
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, UUID> {
-	@Query("SELECT t FROM Transaction t WHERE t.sourceAccount.id = :accountId OR t.destAccount.id = :accountId")
-	Page<Transaction> findAccountTransactions(@Param("accountId") UUID accountId, Pageable pageable) ;
+	@Query("SELECT t FROM Transaction t WHERE t.sourceAccount.id = :accountId OR t.destAccount.id = :accountId ORDER BY t.createdAt DESC")
+	Page<Transaction> findAccountTransactions(@Param("accountId") UUID accountId, Pageable pageable);
 }
