@@ -158,11 +158,10 @@ public class BankApiIT extends BaseIntegrationTest {
 		       .andExpect(status().isOk())
 		       .andExpect(jsonPath("$.balance").value("0.00"));
 
-		// 4. Verify FAILED transaction was logged
+		// 4. Verify NO transaction ledger entry was committed (Atomic Rollback)
 		mockMvc.perform(get("/api/v1/accounts/" + accountCId + "/transactions").cookie(new Cookie("jwt", tokenC)))
 		       .andExpect(status().isOk())
-		       .andExpect(jsonPath("$.totalElements").value(1))
-		       .andExpect(jsonPath("$.content[0].status").value("FAILED"));
+		       .andExpect(jsonPath("$.totalElements").value(0));
 
 		// 5. Verify TRANSFER_FAILED audit log was recorded in the database
 		List<AuditLog> failedLogs = auditLogRepository.findAll();

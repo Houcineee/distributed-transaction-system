@@ -24,12 +24,10 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class TransactionService {
 	private final AccountRepository accountRepository;
-	private final TransactionLoggerService transactionLoggerService;
 	private final TransactionRepository transactionRepository;
 
-	public TransactionService(AccountRepository accountRepository, TransactionLoggerService transactionLoggerService, TransactionRepository transactionRepository) {
+	public TransactionService(AccountRepository accountRepository, TransactionRepository transactionRepository) {
 		this.accountRepository = accountRepository;
-		this.transactionLoggerService = transactionLoggerService;
 		this.transactionRepository = transactionRepository;
 	}
 
@@ -45,11 +43,9 @@ public class TransactionService {
 		try {
 			srcAccount.debit(amount);
 			destAccount.credit(amount);
-			Transaction transaction = transactionLoggerService.saveTransaction(amount, srcAccount, destAccount, TransactionStatus.COMPLETED);
+			Transaction transaction = transactionRepository.save(new Transaction(amount, srcAccount, destAccount, TransactionStatus.COMPLETED));
 			return toTransactionResponse(transaction);
 		} catch (IllegalArgumentException e) {
-			transactionLoggerService.saveTransaction(amount, srcAccount, destAccount, TransactionStatus.FAILED);
-			
 			TransactionRequest reqContext = new TransactionRequest(sourceAccountId, destinationAccountId, amount);
 			throw new TransferFailedException(e.getMessage(), reqContext);
 		}

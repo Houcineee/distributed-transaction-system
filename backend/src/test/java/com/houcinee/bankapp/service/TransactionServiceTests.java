@@ -39,9 +39,6 @@ public class TransactionServiceTests {
 	private AccountRepository accountRepository;
 
 	@Mock
-	private TransactionLoggerService transactionLoggerService;
-
-	@Mock
 	private com.houcinee.bankapp.repository.TransactionRepository transactionRepository;
 
 	@InjectMocks
@@ -66,14 +63,14 @@ public class TransactionServiceTests {
 
 		when(accountRepository.findByIdForUpdate(srcAccount.getId())).thenReturn(Optional.of(srcAccount));
 		when(accountRepository.findByIdForUpdate(destAccount.getId())).thenReturn(Optional.of(destAccount));
-		when(transactionLoggerService.saveTransaction(10L, srcAccount, destAccount, COMPLETED)).thenReturn(dummyTransaction);
+		when(transactionRepository.save(any(Transaction.class))).thenReturn(dummyTransaction);
 
 		transactionService.transferMoney(srcAccount.getId(), destAccount.getId(), 10L);
 
 		assertEquals(90L, srcAccount.getBalance());
 		assertEquals(60L, destAccount.getBalance());
 
-		verify(transactionLoggerService).saveTransaction(10L, srcAccount, destAccount, COMPLETED);
+		verify(transactionRepository).save(any(Transaction.class));
 	}
 
 	@Test
@@ -115,7 +112,7 @@ public class TransactionServiceTests {
 	}
 
 	@Test
-	void givenInsufficientFunds_whenTransferFunds_thenThrowsTransferFailedExceptionAndLogsFailure() {
+	void givenInsufficientFunds_whenTransferFunds_thenThrowsTransferFailedException() {
 		Account srcAccount = createAccount(1L, 5L);
 		Account destAccount = createAccount(2L, 50L);
 
@@ -128,7 +125,7 @@ public class TransactionServiceTests {
 
 		assertEquals("Insufficient balance in source account", exception.getMessage());
 
-		verify(transactionLoggerService).saveTransaction(10L, srcAccount, destAccount, FAILED);
+		verify(transactionRepository, never()).save(any(Transaction.class));
 	}
 
 	@Test
@@ -142,13 +139,13 @@ public class TransactionServiceTests {
 
 		when(accountRepository.findByIdForUpdate(srcAccount.getId())).thenReturn(Optional.of(srcAccount));
 		when(accountRepository.findByIdForUpdate(destAccount.getId())).thenReturn(Optional.of(destAccount));
-		when(transactionLoggerService.saveTransaction(10L, srcAccount, destAccount, COMPLETED)).thenReturn(dummyTransaction);
+		when(transactionRepository.save(any(Transaction.class))).thenReturn(dummyTransaction);
 
 		transactionService.transferMoney(srcAccount.getId(), destAccount.getId(), 10L);
 
 		assertEquals(90L, srcAccount.getBalance());
 		assertEquals(60L, destAccount.getBalance());
-		verify(transactionLoggerService).saveTransaction(10L, srcAccount, destAccount, COMPLETED);
+		verify(transactionRepository).save(any(Transaction.class));
 	}
 
 	@Test
