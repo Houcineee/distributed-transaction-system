@@ -2,6 +2,7 @@ package com.houcinee.bankapp.service;
 
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -20,5 +21,8 @@ public abstract class BaseIntegrationTest {
 
 	@MockitoBean
 	protected KafkaTemplate<String, String> kafkaTemplate;
+
+	@MockitoBean
+	protected StringRedisTemplate stringRedisTemplate;
 
 }
