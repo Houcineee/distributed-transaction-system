@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.houcinee.bankapp.dto.TransactionResponse;
 import com.houcinee.bankapp.enums.Currency;
+import com.houcinee.bankapp.enums.Role;
 import com.houcinee.bankapp.exception.ResourceNotFoundException;
+import com.houcinee.bankapp.exception.TransferFailedException;
 import com.houcinee.bankapp.model.Account;
 import com.houcinee.bankapp.model.AppUser;
 import com.houcinee.bankapp.model.OutboxEvent;
@@ -50,11 +52,14 @@ public class TransactionServiceTests {
 	@Mock
 	private OutboxEventRepository outboxEventRepository;
 
+	@org.mockito.Spy
+	private ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+
 	@InjectMocks
 	private TransactionService transactionService;
 
 	private Account createAccount(long leastSigBits, long balance) {
-		AppUser appUser = new AppUser("Test AppUser", "test@bank.com", "password", com.houcinee.bankapp.enums.Role.CUSTOMER);
+		AppUser appUser = new AppUser("Test AppUser", "test@bank.com", "password", Role.CUSTOMER);
 		ReflectionTestUtils.setField(appUser, "id", UUID.randomUUID());
 
 		Account account = new Account(balance, Currency.MAD, appUser);
@@ -87,7 +92,7 @@ public class TransactionServiceTests {
 	void givenSameAccounts_whenTransferFunds_thenThrowsTransferFailedException() {
 		Account srcAccount = createAccount(1L, 100L);
 
-		com.houcinee.bankapp.exception.TransferFailedException exception = assertThrows(com.houcinee.bankapp.exception.TransferFailedException.class, () -> {
+		TransferFailedException exception = assertThrows(TransferFailedException.class, () -> {
 			transactionService.transferMoney(srcAccount.getId(), srcAccount.getId(), 20L);
 		});
 
@@ -101,7 +106,7 @@ public class TransactionServiceTests {
 		Account srcAccount = createAccount(1L, 100L);
 		Account destAccount = createAccount(2L, 50L);
 
-		com.houcinee.bankapp.exception.TransferFailedException exception = assertThrows(com.houcinee.bankapp.exception.TransferFailedException.class, () -> {
+		TransferFailedException exception = assertThrows(TransferFailedException.class, () -> {
 			transactionService.transferMoney(srcAccount.getId(), destAccount.getId(), -10L);
 		});
 
@@ -132,7 +137,7 @@ public class TransactionServiceTests {
 		when(accountRepository.findByIdForUpdate(srcAccount.getId())).thenReturn(Optional.of(srcAccount));
 		when(accountRepository.findByIdForUpdate(destAccount.getId())).thenReturn(Optional.of(destAccount));
 
-		com.houcinee.bankapp.exception.TransferFailedException exception = assertThrows(com.houcinee.bankapp.exception.TransferFailedException.class, () -> {
+		TransferFailedException exception = assertThrows(TransferFailedException.class, () -> {
 			transactionService.transferMoney(srcAccount.getId(), destAccount.getId(), 10L);
 		});
 

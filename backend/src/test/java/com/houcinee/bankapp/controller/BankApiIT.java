@@ -49,7 +49,8 @@ public class BankApiIT extends BaseIntegrationTest {
 	@Autowired
 	private MockMvc mockMvc;
 
-	private final ObjectMapper objectMapper = new ObjectMapper();
+	@Autowired
+	private ObjectMapper objectMapper;
 
 	@Autowired
 	private AccountRepository accountRepository;
@@ -136,7 +137,7 @@ public class BankApiIT extends BaseIntegrationTest {
 		// 11. Verify Outbox Event was recorded in PostgreSQL
 		List<OutboxEvent> outboxEvents = outboxEventRepository.findAll();
 		assertEquals(1, outboxEvents.size(), "Exactly 1 outbox event should be recorded");
-		OutboxEvent outboxEvent = outboxEvents.get(0);
+		OutboxEvent outboxEvent = outboxEvents.getFirst();
 		assertEquals("ACCOUNT", outboxEvent.getAggregateType());
 		assertEquals(UUID.fromString(accountAId), outboxEvent.getAggregateId());
 		assertEquals("TRANSFER_COMPLETED", outboxEvent.getEventType());

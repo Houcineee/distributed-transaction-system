@@ -33,14 +33,16 @@ public class TransactionService {
 	private final AccountRepository accountRepository;
 	private final TransactionRepository transactionRepository;
 	private final OutboxEventRepository outboxEventRepository;
-	private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+	private final ObjectMapper objectMapper;
 
 	public TransactionService(AccountRepository accountRepository,
 	                          TransactionRepository transactionRepository,
-	                          OutboxEventRepository outboxEventRepository) {
+	                          OutboxEventRepository outboxEventRepository,
+	                          ObjectMapper objectMapper) {
 		this.accountRepository = accountRepository;
 		this.transactionRepository = transactionRepository;
 		this.outboxEventRepository = outboxEventRepository;
+		this.objectMapper = objectMapper;
 	}
 
 	@Transactional
