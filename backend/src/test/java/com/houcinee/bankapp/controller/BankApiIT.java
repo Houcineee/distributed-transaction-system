@@ -10,8 +10,10 @@ import com.houcinee.bankapp.enums.Currency;
 import com.houcinee.bankapp.model.Account;
 import com.houcinee.bankapp.model.AppUser;
 import com.houcinee.bankapp.model.AuditLog;
+import com.houcinee.bankapp.model.OutboxEvent;
 import com.houcinee.bankapp.repository.AccountRepository;
 import com.houcinee.bankapp.repository.AuditLogRepository;
+import com.houcinee.bankapp.repository.OutboxEventRepository;
 import com.houcinee.bankapp.repository.UserRepository;
 import com.houcinee.bankapp.repository.TransactionRepository;
 import com.houcinee.bankapp.service.BaseIntegrationTest;
@@ -32,6 +34,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import java.util.List;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
@@ -46,7 +49,8 @@ public class BankApiIT extends BaseIntegrationTest {
 	@Autowired
 	private MockMvc mockMvc;
 
-	private final ObjectMapper objectMapper = new ObjectMapper();
+	@Autowired
+	private ObjectMapper objectMapper;
 
 	@Autowired
 	private AccountRepository accountRepository;
@@ -59,11 +63,14 @@ public class BankApiIT extends BaseIntegrationTest {
 	private AuditLogRepository auditLogRepository;
 
 	@Autowired
+	private OutboxEventRepository outboxEventRepository;
+
+	@Autowired
 	private JdbcTemplate jdbcTemplate;
 
 	@AfterEach
 	void tearDown() {
-		jdbcTemplate.execute("TRUNCATE TABLE audit_logs, transactions, accounts, users CASCADE");
+		jdbcTemplate.execute("TRUNCATE TABLE audit_logs, outbox_events, transactions, accounts, users CASCADE");
 	}
 
 	@Test
@@ -126,6 +133,15 @@ public class BankApiIT extends BaseIntegrationTest {
 		                                       .anyMatch(l -> l.getAction() == AuditAction.TRANSFER_EXECUTED && "TRANSACTION".equals(l.getTargetEntityType()) && l.getDetails()
 		                                                                                                                                                          .contains("50.00"));
 		assertTrue(transferAuditExists, "Audit log for TRANSFER_EXECUTED should be present in database");
+
+		// 11. Verify Outbox Event was recorded in PostgreSQL
+		List<OutboxEvent> outboxEvents = outboxEventRepository.findAll();
+		assertEquals(1, outboxEvents.size(), "Exactly 1 outbox event should be recorded");
+		OutboxEvent outboxEvent = outboxEvents.getFirst();
+		assertEquals("ACCOUNT", outboxEvent.getAggregateType());
+		assertEquals(UUID.fromString(accountAId), outboxEvent.getAggregateId());
+		assertEquals("TRANSFER_COMPLETED", outboxEvent.getEventType());
+		assertTrue(outboxEvent.getPayload().contains("5000"), "Outbox event payload should contain transfer amount");
 	}
 
 	@Test
@@ -169,6 +185,10 @@ public class BankApiIT extends BaseIntegrationTest {
 		                                              .anyMatch(l -> l.getAction() == AuditAction.TRANSFER_FAILED && l.getDetails()
 		                                                                                                              .contains("Insufficient balance in source account"));
 		assertTrue(transferFailedAuditExists, "Audit log for TRANSFER_FAILED should be present in database");
+
+		// 6. Verify NO outbox event was committed (Atomic Rollback)
+		List<OutboxEvent> outboxEvents = outboxEventRepository.findAll();
+		assertTrue(outboxEvents.isEmpty(), "Outbox table should remain empty on rolled-back transfer");
 	}
 
 	@Test

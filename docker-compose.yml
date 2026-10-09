@@ -1,13 +1,45 @@
 services:
- db_service:
-   image : postgres:17
-   network_mode: "host"
-   volumes:
-     - db_data:/var/lib/postgresql/data
-   environment:
-     POSTGRES_USER: postgres
-     POSTGRES_PASSWORD: postgres
-     POSTGRES_DB: bank_db
+  db_service:
+    image: postgres:17
+    network_mode: "host"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: bank_db
+
+  kafka:
+    image: apache/kafka:3.8.0
+    container_name: bank_kafka
+    network_mode: "host"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://localhost:9092,CONTROLLER://localhost:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: bank_redis
+    network_mode: "host"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+
 volumes:
   db_data:
+  kafka_data:
+  redis_data:
 

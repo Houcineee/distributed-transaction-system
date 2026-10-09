@@ -2,6 +2,7 @@ package com.houcinee.bankapp.service;
 
 
 import com.houcinee.bankapp.dto.UserResponse;
+import com.houcinee.bankapp.enums.Role;
 import com.houcinee.bankapp.exception.DuplicateResourceException;
 import com.houcinee.bankapp.exception.ResourceNotFoundException;
 import com.houcinee.bankapp.model.AppUser;
@@ -34,12 +35,12 @@ public class UserServiceTests {
 		String email = "test@test.com" ;
 		String name = "test" ;
 		String hashedPassword = "hashedPassword";
-		AppUser appUserMock = new AppUser(name , email, hashedPassword, com.houcinee.bankapp.enums.Role.CUSTOMER) ;
+		AppUser appUserMock = new AppUser(name , email, hashedPassword, Role.CUSTOMER) ;
 		ReflectionTestUtils.setField(appUserMock, "id", UUID.randomUUID());
 		when(userRepository.existsByEmail(email)).thenReturn(false) ;
 		when(userRepository.save(any(AppUser.class))).thenReturn(appUserMock) ;
 
-		UserResponse res = userService.createUser(name, email, hashedPassword, com.houcinee.bankapp.enums.Role.CUSTOMER) ;
+		UserResponse res = userService.createUser(name, email, hashedPassword, Role.CUSTOMER) ;
 
 		verify(userRepository).existsByEmail(email);
 		verify(userRepository).save(any(AppUser.class));
@@ -55,7 +56,7 @@ public class UserServiceTests {
 		String hashedPassword = "hashedPassword";
 		when(userRepository.existsByEmail(email)).thenReturn(true);
 
-		Exception exception = assertThrows(DuplicateResourceException.class , ()-> userService.createUser(name, email, hashedPassword, com.houcinee.bankapp.enums.Role.CUSTOMER)) ;
+		Exception exception = assertThrows(DuplicateResourceException.class , ()-> userService.createUser(name, email, hashedPassword, Role.CUSTOMER)) ;
 
 		verify(userRepository).existsByEmail(email);
 		verify(userRepository, never()).save(any(AppUser.class));
@@ -67,7 +68,7 @@ public class UserServiceTests {
 		String email = "test@test.com" ;
 		String name = "test" ;
 
-		AppUser appUserMock = new AppUser(name , email, "password", com.houcinee.bankapp.enums.Role.CUSTOMER) ;
+		AppUser appUserMock = new AppUser(name , email, "password", Role.CUSTOMER) ;
 		ReflectionTestUtils.setField(appUserMock, "id", UUID.randomUUID());
 		when(userRepository.findById(appUserMock.getId())).thenReturn(Optional.of(appUserMock)) ;
 

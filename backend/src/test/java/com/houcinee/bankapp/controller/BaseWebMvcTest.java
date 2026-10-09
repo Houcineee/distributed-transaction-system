@@ -1,6 +1,7 @@
 package com.houcinee.bankapp.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.houcinee.bankapp.config.SecurityConfig;
 import com.houcinee.bankapp.filter.JwtAuthenticationFilter;
 import com.houcinee.bankapp.security.SecurityService;
@@ -26,7 +27,7 @@ public abstract class BaseWebMvcTest {
 	@Autowired
 	protected MockMvc mockMvc;
 
-	protected final ObjectMapper objectMapper = new ObjectMapper();
+	protected final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
 	@MockitoBean
 	protected JwtService jwtService;

@@ -10,8 +10,13 @@ services:
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - APP_CORS_ALLOWED_ORIGINS=${APP_CORS_ALLOWED_ORIGINS}
       - APP_SECURITY_COOKIE_SECURE=${APP_SECURITY_COOKIE_SECURE}
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     depends_on:
       - db_service
+      - kafka
+      - redis
 
   frontend:
     image: ghcr.io/houcineee/bank-frontend:latest
@@ -28,6 +33,33 @@ services:
       POSTGRES_DB: bank_db
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+
+  kafka:
+    image: apache/kafka:3.8.0
+    restart: always
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+    volumes:
+      - prod_kafka_data:/var/lib/kafka/data
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - prod_redis_data:/data
 
   nginx:
     image: nginx:latest
@@ -78,3 +110,5 @@ services:
 
 volumes:
   prod_db_data:
+  prod_kafka_data:
+  prod_redis_data:

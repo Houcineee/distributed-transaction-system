@@ -1,6 +1,7 @@
 package com.houcinee.bankapp.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.houcinee.bankapp.dto.AuditLogResponse;
 import com.houcinee.bankapp.dto.TransactionRequest;
 import com.houcinee.bankapp.dto.TransactionResponse;
@@ -43,6 +44,9 @@ class AuditServiceTest {
 
     @Mock
     private HttpServletRequest request;
+
+    @org.mockito.Spy
+    private ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
     @InjectMocks
     private AuditService auditService;
@@ -377,10 +381,9 @@ class AuditServiceTest {
 
     @Test
     void givenObjectMapperFails_whenRecord_thenSwallowsExceptionAndDoesNotCrash() throws Exception {
-        AuditService brokenService = new AuditService(auditLogRepository);
         ObjectMapper brokenMapper = mock(ObjectMapper.class);
+        AuditService brokenService = new AuditService(auditLogRepository, brokenMapper);
 
-        ReflectionTestUtils.setField(brokenService, "objectMapper", brokenMapper);
         when(brokenMapper.writeValueAsString(any())).thenThrow(new RuntimeException("Simulated JSON Exception"));
 
         assertDoesNotThrow(() -> brokenService.recordAccessDenied("/api/secret", request));

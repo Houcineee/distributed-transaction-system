@@ -1,17 +1,25 @@
 package com.houcinee.bankapp.service;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.houcinee.bankapp.dto.TransactionResponse;
 import com.houcinee.bankapp.enums.Currency;
+import com.houcinee.bankapp.enums.Role;
 import com.houcinee.bankapp.exception.ResourceNotFoundException;
+import com.houcinee.bankapp.exception.TransferFailedException;
 import com.houcinee.bankapp.model.Account;
 import com.houcinee.bankapp.model.AppUser;
+import com.houcinee.bankapp.model.OutboxEvent;
 import com.houcinee.bankapp.model.Transaction;
 import com.houcinee.bankapp.repository.AccountRepository;
+import com.houcinee.bankapp.repository.OutboxEventRepository;
+import com.houcinee.bankapp.repository.TransactionRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -39,13 +47,19 @@ public class TransactionServiceTests {
 	private AccountRepository accountRepository;
 
 	@Mock
-	private com.houcinee.bankapp.repository.TransactionRepository transactionRepository;
+	private TransactionRepository transactionRepository;
+
+	@Mock
+	private OutboxEventRepository outboxEventRepository;
+
+	@org.mockito.Spy
+	private ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
 	@InjectMocks
 	private TransactionService transactionService;
 
 	private Account createAccount(long leastSigBits, long balance) {
-		AppUser appUser = new AppUser("Test AppUser", "test@bank.com", "password", com.houcinee.bankapp.enums.Role.CUSTOMER);
+		AppUser appUser = new AppUser("Test AppUser", "test@bank.com", "password", Role.CUSTOMER);
 		ReflectionTestUtils.setField(appUser, "id", UUID.randomUUID());
 
 		Account account = new Account(balance, Currency.MAD, appUser);
@@ -71,18 +85,20 @@ public class TransactionServiceTests {
 		assertEquals(60L, destAccount.getBalance());
 
 		verify(transactionRepository).save(any(Transaction.class));
+		verify(outboxEventRepository).save(any(OutboxEvent.class));
 	}
 
 	@Test
 	void givenSameAccounts_whenTransferFunds_thenThrowsTransferFailedException() {
 		Account srcAccount = createAccount(1L, 100L);
 
-		com.houcinee.bankapp.exception.TransferFailedException exception = assertThrows(com.houcinee.bankapp.exception.TransferFailedException.class, () -> {
+		TransferFailedException exception = assertThrows(TransferFailedException.class, () -> {
 			transactionService.transferMoney(srcAccount.getId(), srcAccount.getId(), 20L);
 		});
 
 		assertEquals("Source and destination accounts cannot be the same", exception.getMessage());
 		verify(accountRepository, never()).findByIdForUpdate(any());
+		verify(outboxEventRepository, never()).save(any(OutboxEvent.class));
 	}
 
 	@Test
@@ -90,11 +106,12 @@ public class TransactionServiceTests {
 		Account srcAccount = createAccount(1L, 100L);
 		Account destAccount = createAccount(2L, 50L);
 
-		com.houcinee.bankapp.exception.TransferFailedException exception = assertThrows(com.houcinee.bankapp.exception.TransferFailedException.class, () -> {
+		TransferFailedException exception = assertThrows(TransferFailedException.class, () -> {
 			transactionService.transferMoney(srcAccount.getId(), destAccount.getId(), -10L);
 		});
 
 		assertEquals("Transfer amount must be greater than zero", exception.getMessage());
+		verify(outboxEventRepository, never()).save(any(OutboxEvent.class));
 	}
 
 	@Test
@@ -109,6 +126,7 @@ public class TransactionServiceTests {
 		});
 
 		assertEquals("Account not found: " + srcUUID, exception.getMessage());
+		verify(outboxEventRepository, never()).save(any(OutboxEvent.class));
 	}
 
 	@Test
@@ -119,13 +137,14 @@ public class TransactionServiceTests {
 		when(accountRepository.findByIdForUpdate(srcAccount.getId())).thenReturn(Optional.of(srcAccount));
 		when(accountRepository.findByIdForUpdate(destAccount.getId())).thenReturn(Optional.of(destAccount));
 
-		com.houcinee.bankapp.exception.TransferFailedException exception = assertThrows(com.houcinee.bankapp.exception.TransferFailedException.class, () -> {
+		TransferFailedException exception = assertThrows(TransferFailedException.class, () -> {
 			transactionService.transferMoney(srcAccount.getId(), destAccount.getId(), 10L);
 		});
 
 		assertEquals("Insufficient balance in source account", exception.getMessage());
 
 		verify(transactionRepository, never()).save(any(Transaction.class));
+		verify(outboxEventRepository, never()).save(any(OutboxEvent.class));
 	}
 
 	@Test
@@ -146,6 +165,7 @@ public class TransactionServiceTests {
 		assertEquals(90L, srcAccount.getBalance());
 		assertEquals(60L, destAccount.getBalance());
 		verify(transactionRepository).save(any(Transaction.class));
+		verify(outboxEventRepository).save(any(OutboxEvent.class));
 	}
 
 	@Test

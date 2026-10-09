@@ -31,7 +31,7 @@ import java.util.UUID;
 public class AuditService {
 
     private final AuditLogRepository auditLogRepository;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
     public void recordLoginSuccess(HttpServletRequest request) {
         saveLog(getCurrentUserId(), AuditAction.LOGIN_SUCCESS, null, null, Map.of("status", "success"), request);
