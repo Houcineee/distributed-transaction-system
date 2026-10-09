@@ -2,7 +2,9 @@ package com.houcinee.bankapp.service;
 
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -15,5 +17,8 @@ public abstract class BaseIntegrationTest {
 	@Container
 	@ServiceConnection
 	static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine");
+
+	@MockitoBean
+	protected KafkaTemplate<String, String> kafkaTemplate;
 
 }
