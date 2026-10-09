@@ -1,14 +1,20 @@
 package com.houcinee.bankapp.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.houcinee.bankapp.dto.TransactionRequest;
 import com.houcinee.bankapp.dto.TransactionResponse;
+import com.houcinee.bankapp.dto.event.TransferCompletedEvent;
 import com.houcinee.bankapp.enums.TransactionStatus;
 import com.houcinee.bankapp.exception.ResourceNotFoundException;
 import com.houcinee.bankapp.exception.TransferFailedException;
 import com.houcinee.bankapp.helpers.MoneyUtil;
 import com.houcinee.bankapp.model.Account;
+import com.houcinee.bankapp.model.OutboxEvent;
 import com.houcinee.bankapp.model.Transaction;
 import com.houcinee.bankapp.repository.AccountRepository;
+import com.houcinee.bankapp.repository.OutboxEventRepository;
 import com.houcinee.bankapp.repository.TransactionRepository;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +23,7 @@ import org.springframework.stereotype.Service;
 
 import org.springframework.data.domain.Pageable;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Service
@@ -25,10 +32,15 @@ import java.util.UUID;
 public class TransactionService {
 	private final AccountRepository accountRepository;
 	private final TransactionRepository transactionRepository;
+	private final OutboxEventRepository outboxEventRepository;
+	private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
-	public TransactionService(AccountRepository accountRepository, TransactionRepository transactionRepository) {
+	public TransactionService(AccountRepository accountRepository,
+	                          TransactionRepository transactionRepository,
+	                          OutboxEventRepository outboxEventRepository) {
 		this.accountRepository = accountRepository;
 		this.transactionRepository = transactionRepository;
+		this.outboxEventRepository = outboxEventRepository;
 	}
 
 	@Transactional
@@ -44,10 +56,28 @@ public class TransactionService {
 			srcAccount.debit(amount);
 			destAccount.credit(amount);
 			Transaction transaction = transactionRepository.save(new Transaction(amount, srcAccount, destAccount, TransactionStatus.COMPLETED));
+			saveOutboxEvent(transaction, srcAccount.getId(), destAccount.getId(), amount);
 			return toTransactionResponse(transaction);
 		} catch (IllegalArgumentException e) {
 			TransactionRequest reqContext = new TransactionRequest(sourceAccountId, destinationAccountId, amount);
 			throw new TransferFailedException(e.getMessage(), reqContext);
+		}
+	}
+
+	private void saveOutboxEvent(Transaction transaction, UUID sourceAccountId, UUID destinationAccountId, Long amount) {
+		try {
+			TransferCompletedEvent event = new TransferCompletedEvent(
+				transaction.getId(),
+				sourceAccountId,
+				destinationAccountId,
+				amount,
+				Instant.now()
+			);
+			String payload = objectMapper.writeValueAsString(event);
+			outboxEventRepository.save(new OutboxEvent("ACCOUNT", sourceAccountId, "TRANSFER_COMPLETED", payload));
+		} catch (JsonProcessingException e) {
+			log.error("Failed to serialize TransferCompletedEvent for transaction {}", transaction.getId(), e);
+			throw new RuntimeException("Failed to serialize outbox event", e);
 		}
 	}
 

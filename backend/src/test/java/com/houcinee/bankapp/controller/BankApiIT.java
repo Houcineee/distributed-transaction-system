@@ -58,6 +58,7 @@ public class BankApiIT extends BaseIntegrationTest {
 	@Autowired
 	private AuditLogRepository auditLogRepository;
 
+
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
 
