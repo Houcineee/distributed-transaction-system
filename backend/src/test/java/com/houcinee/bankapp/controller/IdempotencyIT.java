@@ -54,8 +54,6 @@ public class IdempotencyIT extends BaseIntegrationTest {
 	@Autowired
 	private AccountRepository accountRepository;
 
-	@Autowired
-	private UserRepository userRepository;
 
 	@Autowired
 	private TransactionRepository transactionRepository;
