@@ -1,5 +1,6 @@
 package com.houcinee.bankapp.config;
 
+import com.houcinee.bankapp.filter.IdempotencyFilter;
 import com.houcinee.bankapp.filter.JwtAuthenticationFilter;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,7 @@ public class SecurityConfig {
     private List<String> allowedOrigins;
     
     private final JwtAuthenticationFilter jwtAuthenticationFilter ;
+    private final IdempotencyFilter idempotencyFilter;
 
     private static final String[] WHITE_LIST_URL = {
         "/api/v1/auth/**",
@@ -65,7 +67,9 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(WHITE_LIST_URL).permitAll()
                 .anyRequest().authenticated()
-            ).addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            )
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterAfter(idempotencyFilter, JwtAuthenticationFilter.class);
 
             
         return http.build();
