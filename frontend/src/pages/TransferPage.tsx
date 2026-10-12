@@ -29,6 +29,7 @@ export function TransferPage() {
 
   const [serverError, setServerError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [idempotencyKey, setIdempotencyKey] = useState<string>(() => crypto.randomUUID());
 
   const {
     register,
@@ -91,6 +92,9 @@ export function TransferPage() {
     try {
       const amountInCents = Math.round(data.amount * 100);
       const { error: txError } = await client.POST("/api/v1/transfers", {
+        headers: {
+          "Idempotency-Key": idempotencyKey,
+        },
         body: {
           srcAccount: selectedAccount.id!,
           destAccount: data.destAccount,
@@ -105,6 +109,7 @@ export function TransferPage() {
 
       setSuccessMessage("Transfer completed successfully.");
       reset();
+      setIdempotencyKey(crypto.randomUUID());
 
       const { data: accData } = await client.GET("/api/v1/users/{id}/accounts", {
         params: { path: { id: user!.id! } },

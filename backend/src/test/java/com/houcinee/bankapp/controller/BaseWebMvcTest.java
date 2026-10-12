@@ -3,9 +3,11 @@ package com.houcinee.bankapp.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.houcinee.bankapp.config.SecurityConfig;
+import com.houcinee.bankapp.filter.IdempotencyFilter;
 import com.houcinee.bankapp.filter.JwtAuthenticationFilter;
 import com.houcinee.bankapp.security.SecurityService;
 import com.houcinee.bankapp.service.AuditService;
+import com.houcinee.bankapp.service.IdempotencyService;
 import com.houcinee.bankapp.service.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
@@ -21,7 +23,7 @@ import java.util.UUID;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 
-@Import({SecurityConfig.class, JwtAuthenticationFilter.class})
+@Import({SecurityConfig.class, JwtAuthenticationFilter.class, IdempotencyFilter.class})
 public abstract class BaseWebMvcTest {
 
 	@Autowired
@@ -40,6 +42,9 @@ public abstract class BaseWebMvcTest {
 
 	@MockitoBean
 	protected AuditService auditService;
+
+	@MockitoBean
+	protected IdempotencyService idempotencyService;
 
 	protected RequestPostProcessor mockAuth(UUID userId, String role) {
 		var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));

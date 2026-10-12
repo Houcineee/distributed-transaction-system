@@ -11,6 +11,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -26,8 +27,6 @@ public class TransactionServiceIT extends BaseIntegrationTest {
 	AccountRepository accountRepository;
 	@Autowired
 	UserRepository userRepository;
-	@Autowired
-	TransactionRepository transactionRepository;
 
 	private UUID srcAccountId;
 	private UUID destAccountId;
@@ -45,11 +44,11 @@ public class TransactionServiceIT extends BaseIntegrationTest {
 	}
 
 	@Autowired
-	private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+	private JdbcTemplate jdbcTemplate;
 
 	@AfterEach
 	void tearDown() {
-		jdbcTemplate.execute("TRUNCATE TABLE audit_logs, transactions, accounts, users CASCADE");
+		jdbcTemplate.execute("TRUNCATE TABLE audit_logs, outbox_events, transactions, accounts, users CASCADE");
 	}
 
 	@Test

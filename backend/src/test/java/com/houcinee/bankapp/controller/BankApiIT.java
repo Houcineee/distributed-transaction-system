@@ -7,6 +7,7 @@ import com.houcinee.bankapp.dto.RegisterRequest;
 import com.houcinee.bankapp.dto.TransactionRequest;
 import com.houcinee.bankapp.enums.AuditAction;
 import com.houcinee.bankapp.enums.Currency;
+import com.houcinee.bankapp.enums.Role;
 import com.houcinee.bankapp.model.Account;
 import com.houcinee.bankapp.model.AppUser;
 import com.houcinee.bankapp.model.AuditLog;
@@ -264,6 +265,43 @@ public class BankApiIT extends BaseIntegrationTest {
 		       // Validate masking over the wire
 		       .andExpect(jsonPath("$[0].cardNumber").value(org.hamcrest.Matchers.startsWith("**** **** **** ")))
 		       .andExpect(jsonPath("$[0].cvv").value("***"));
+	}
+
+	@Test
+	void givenSwaggerEndpoints_whenUnauthenticated_thenReturns401Unauthorized() throws Exception {
+		mockMvc.perform(get("/v3/api-docs"))
+		       .andExpect(status().isUnauthorized());
+
+		mockMvc.perform(get("/swagger-ui/index.html"))
+		       .andExpect(status().isUnauthorized());
+	}
+
+	@Test
+	void givenSwaggerEndpoints_whenCustomerRole_thenReturns403Forbidden() throws Exception {
+		createUser("Customer", "customer@bank.com");
+		String token = login("customer@bank.com", "secure123");
+
+		mockMvc.perform(get("/v3/api-docs").cookie(new Cookie("jwt", token)))
+		       .andExpect(status().isForbidden());
+
+		mockMvc.perform(get("/swagger-ui/index.html").cookie(new Cookie("jwt", token)))
+		       .andExpect(status().isForbidden());
+	}
+
+	@Test
+	void givenSwaggerEndpoints_whenAdminRole_thenAccessGranted() throws Exception {
+		String adminId = createUser("Admin", "admin@bank.com");
+		AppUser adminUser = userRepository.findById(UUID.fromString(adminId)).orElseThrow();
+		setField(adminUser, "role", Role.ADMIN);
+		userRepository.save(adminUser);
+
+		String adminToken = login("admin@bank.com", "secure123");
+
+		mockMvc.perform(get("/v3/api-docs").cookie(new Cookie("jwt", adminToken)))
+		       .andExpect(status().isOk());
+
+		mockMvc.perform(get("/swagger-ui/index.html").cookie(new Cookie("jwt", adminToken)))
+		       .andExpect(status().isOk());
 	}
 
 	// --- Helpers ---

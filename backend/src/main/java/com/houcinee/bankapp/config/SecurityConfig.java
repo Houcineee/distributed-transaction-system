@@ -1,5 +1,6 @@
 package com.houcinee.bankapp.config;
 
+import com.houcinee.bankapp.filter.IdempotencyFilter;
 import com.houcinee.bankapp.filter.JwtAuthenticationFilter;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
@@ -32,13 +33,17 @@ public class SecurityConfig {
     private List<String> allowedOrigins;
     
     private final JwtAuthenticationFilter jwtAuthenticationFilter ;
+    private final IdempotencyFilter idempotencyFilter;
 
     private static final String[] WHITE_LIST_URL = {
         "/api/v1/auth/**",
+        "/actuator/**"
+    };
+
+    private static final String[] SWAGGER_URLS = {
         "/v3/api-docs/**",
         "/swagger-ui/**",
-        "/swagger-ui.html",
-        "/actuator/**"
+        "/swagger-ui.html"
     };
 
     @Bean
@@ -64,8 +69,11 @@ public class SecurityConfig {
             )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(WHITE_LIST_URL).permitAll()
+                .requestMatchers(SWAGGER_URLS).hasRole("ADMIN")
                 .anyRequest().authenticated()
-            ).addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            )
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterAfter(idempotencyFilter, JwtAuthenticationFilter.class);
 
             
         return http.build();
