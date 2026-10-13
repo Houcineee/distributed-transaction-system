@@ -43,7 +43,6 @@ const LOGO_DATA: Record<string, { fill: string; inner: string }> = {
   }
 };
 
-// Math & Easing Helpers
 const clamp = (val: number, min = 0, max = 1) => Math.max(min, Math.min(max, val));
 
 const smoothStep = (edge0: number, edge1: number, x: number) => {
@@ -96,32 +95,37 @@ const getPacketPos = (
   p: number,
   startP: number,
   endP: number,
-  calc: (t: number) => { x: number; y: number }
+  calc: (t: number) => { x: number; y: number },
+  label?: string,
+  offset: { x: number; y: number } = { x: 0, y: -16 }
 ) => {
   if (p < startP || p > endP) return null;
   const t = smoothStep(startP, endP, p);
-  return calc(t);
+  const pos = calc(t);
+  const labelOpacity = clamp(Math.sin(t * Math.PI) * 1.5);
+  return { ...pos, label, offset, labelOpacity };
 };
 
 interface NodeDef {
   id: string;
   name: string;
+  subtitle: string;
   x: number;
   y: number;
   logoKey: string;
 }
 
 const NODES: NodeDef[] = [
-  { id: "react", name: "React", x: 90, y: 220, logoKey: "react" },
-  { id: "nginx", name: "Nginx", x: 250, y: 220, logoKey: "nginx" },
-  { id: "springboot", name: "Spring Boot", x: 440, y: 220, logoKey: "springboot" },
-  { id: "redis", name: "Redis", x: 660, y: 90, logoKey: "redis" },
-  { id: "postgresql", name: "PostgreSQL", x: 660, y: 220, logoKey: "postgresql" },
-  { id: "kafka", name: "Kafka", x: 660, y: 350, logoKey: "apachekafka" },
-  { id: "prometheus", name: "Prometheus", x: 890, y: 110, logoKey: "prometheus" },
-  { id: "grafana", name: "Grafana", x: 1110, y: 110, logoKey: "grafana" },
-  { id: "promtail", name: "Promtail", x: 890, y: 330, logoKey: "promtail" },
-  { id: "loki", name: "Loki", x: 1110, y: 330, logoKey: "loki" },
+  { id: "react", name: "React", subtitle: "Frontend", x: 90, y: 220, logoKey: "react" },
+  { id: "nginx", name: "Nginx", subtitle: "Gateway", x: 250, y: 220, logoKey: "nginx" },
+  { id: "springboot", name: "Spring Boot", subtitle: "API", x: 440, y: 220, logoKey: "springboot" },
+  { id: "redis", name: "Redis", subtitle: "Cache", x: 660, y: 90, logoKey: "redis" },
+  { id: "postgresql", name: "PostgreSQL", subtitle: "Ledger", x: 660, y: 220, logoKey: "postgresql" },
+  { id: "kafka", name: "Kafka", subtitle: "Events", x: 660, y: 350, logoKey: "apachekafka" },
+  { id: "prometheus", name: "Prometheus", subtitle: "Metrics", x: 890, y: 110, logoKey: "prometheus" },
+  { id: "grafana", name: "Grafana", subtitle: "Dashboards", x: 1110, y: 110, logoKey: "grafana" },
+  { id: "promtail", name: "Promtail", subtitle: "Collector", x: 890, y: 330, logoKey: "promtail" },
+  { id: "loki", name: "Loki", subtitle: "Logs", x: 1110, y: 330, logoKey: "loki" },
 ];
 
 export function ArchitectureDiagram() {
@@ -130,7 +134,7 @@ export function ArchitectureDiagram() {
   useEffect(() => {
     let animId: number;
     let startTime: number | null = null;
-    const duration = 6000; // 6.0s smooth continuous cycle
+    const duration = 6000;
 
     const loop = (timestamp: number) => {
       if (!startTime) startTime = timestamp;
@@ -145,7 +149,6 @@ export function ArchitectureDiagram() {
 
   const p = progress;
 
-  // Active pulses for all 10 nodes
   const pulses: Record<string, number> = {
     react: getNodePulse(p, 0.04, 0.05),
     nginx: getNodePulse(p, 0.19, 0.05),
@@ -159,69 +162,65 @@ export function ArchitectureDiagram() {
     grafana: Math.max(getNodePulse(p, 0.88, 0.05), getNodePulse(p, 0.98, 0.04)),
   };
 
-  // Trajectory paths & packet calculations (anchored to 68x68 tile edges)
-  const packetReactToNginx = getPacketPos(p, 0.02, 0.18, (t) =>
-    lerp({ x: 124, y: 220 }, { x: 216, y: 220 }, t)
+  const packetReactToNginx = getPacketPos(
+    p, 0.02, 0.18,
+    (t) => lerp({ x: 124, y: 220 }, { x: 216, y: 220 }, t),
+    "POST /transfers"
   );
 
-  const packetNginxToSpring = getPacketPos(p, 0.20, 0.36, (t) =>
-    lerp({ x: 284, y: 220 }, { x: 406, y: 220 }, t)
+  const packetNginxToSpring = getPacketPos(
+    p, 0.20, 0.36,
+    (t) => lerp({ x: 284, y: 220 }, { x: 406, y: 220 }, t),
+    "proxy request"
   );
 
-  const packetSpringToRedis = getPacketPos(p, 0.38, 0.58, (t) =>
-    cubicBezier(
-      { x: 474, y: 220 },
-      { x: 560, y: 220 },
-      { x: 560, y: 90 },
-      { x: 626, y: 90 },
-      t
-    )
+  const packetSpringToRedis = getPacketPos(
+    p, 0.38, 0.58,
+    (t) => cubicBezier({ x: 474, y: 220 }, { x: 560, y: 220 }, { x: 560, y: 90 }, { x: 626, y: 90 }, t),
+    "cache check"
   );
 
-  const packetSpringToPostgres = getPacketPos(p, 0.38, 0.58, (t) =>
-    lerp({ x: 474, y: 220 }, { x: 626, y: 220 }, t)
+  const packetSpringToPostgres = getPacketPos(
+    p, 0.38, 0.58,
+    (t) => lerp({ x: 474, y: 220 }, { x: 626, y: 220 }, t),
+    "ledger commit"
   );
 
-  const packetSpringToKafka = getPacketPos(p, 0.38, 0.58, (t) =>
-    cubicBezier(
-      { x: 474, y: 220 },
-      { x: 560, y: 220 },
-      { x: 560, y: 350 },
-      { x: 626, y: 350 },
-      t
-    )
+  const packetSpringToKafka = getPacketPos(
+    p, 0.38, 0.58,
+    (t) => cubicBezier({ x: 474, y: 220 }, { x: 560, y: 220 }, { x: 560, y: 350 }, { x: 626, y: 350 }, t),
+    "transfer event"
   );
 
-  const packetSpringToPrometheus = getPacketPos(p, 0.46, 0.70, (t) =>
-    cubicBezier(
-      { x: 474, y: 220 },
-      { x: 600, y: 190 },
-      { x: 740, y: 110 },
-      { x: 856, y: 110 },
-      t
-    )
+  const packetSpringToPrometheus = getPacketPos(
+    p, 0.46, 0.70,
+    (t) => cubicBezier({ x: 474, y: 220 }, { x: 600, y: 190 }, { x: 740, y: 110 }, { x: 856, y: 110 }, t),
+    "scrape metrics"
   );
 
-  const packetSpringToPromtail = getPacketPos(p, 0.46, 0.70, (t) =>
-    cubicBezier(
-      { x: 474, y: 220 },
-      { x: 600, y: 250 },
-      { x: 740, y: 330 },
-      { x: 856, y: 330 },
-      t
-    )
+  const packetSpringToPromtail = getPacketPos(
+    p, 0.46, 0.70,
+    (t) => cubicBezier({ x: 474, y: 220 }, { x: 600, y: 250 }, { x: 740, y: 330 }, { x: 856, y: 330 }, t),
+    "export logs"
   );
 
-  const packetPrometheusToGrafana = getPacketPos(p, 0.72, 0.88, (t) =>
-    lerp({ x: 924, y: 110 }, { x: 1076, y: 110 }, t)
+  const packetPrometheusToGrafana = getPacketPos(
+    p, 0.72, 0.88,
+    (t) => lerp({ x: 924, y: 110 }, { x: 1076, y: 110 }, t),
+    "p99 metrics"
   );
 
-  const packetPromtailToLoki = getPacketPos(p, 0.72, 0.88, (t) =>
-    lerp({ x: 924, y: 330 }, { x: 1076, y: 330 }, t)
+  const packetPromtailToLoki = getPacketPos(
+    p, 0.72, 0.88,
+    (t) => lerp({ x: 924, y: 330 }, { x: 1076, y: 330 }, t),
+    "stream logs"
   );
 
-  const packetLokiToGrafana = getPacketPos(p, 0.86, 0.98, (t) =>
-    lerp({ x: 1110, y: 296 }, { x: 1110, y: 144 }, t)
+  const packetLokiToGrafana = getPacketPos(
+    p, 0.86, 0.98,
+    (t) => lerp({ x: 1110, y: 296 }, { x: 1110, y: 144 }, t),
+    "query logs",
+    { x: 44, y: 0 }
   );
 
   const activePackets = [
@@ -235,32 +234,38 @@ export function ArchitectureDiagram() {
     packetPrometheusToGrafana,
     packetPromtailToLoki,
     packetLokiToGrafana,
-  ].filter((pos): pos is { x: number; y: number } => pos !== null);
+  ].filter(
+    (
+      pos
+    ): pos is {
+      x: number;
+      y: number;
+      label?: string;
+      offset: { x: number; y: number };
+      labelOpacity: number;
+    } => pos !== null
+  );
 
   return (
     <div className="w-full max-w-6xl mx-auto my-10 select-none">
       <svg
-        viewBox="0 0 1280 440"
+        viewBox="0 0 1280 460"
         className="w-full h-auto block"
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
-          {/* Subtle soft drop shadow */}
           <filter id="tileShadow" x="-20%" y="-20%" width="140%" height="140%">
             <feDropShadow dx="0" dy="3" stdDeviation="4" floodColor="#000000" floodOpacity="0.08" />
           </filter>
 
-          {/* Emerald glow for flying packets */}
           <filter id="emeraldGlow" x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur in="SourceGraphic" stdDeviation="4.5" />
           </filter>
 
-          {/* Subtle pulse aura for active tile */}
           <filter id="tileGlow" x="-30%" y="-30%" width="160%" height="160%">
             <feGaussianBlur in="SourceGraphic" stdDeviation="4" />
           </filter>
 
-          {/* Arrowheads */}
           <marker
             id="flowArrow"
             viewBox="0 0 6 6"
@@ -288,7 +293,6 @@ export function ArchitectureDiagram() {
 
         {/* 1. Connection Trajectory Lines */}
         <g strokeLinecap="round" strokeLinejoin="round">
-          {/* React -> Nginx */}
           <path
             d="M 124 220 L 216 220"
             stroke="rgba(0,0,0,0.14)"
@@ -296,7 +300,6 @@ export function ArchitectureDiagram() {
             markerEnd="url(#flowArrow)"
           />
 
-          {/* Nginx -> Spring Boot */}
           <path
             d="M 284 220 L 406 220"
             stroke="rgba(0,0,0,0.14)"
@@ -304,7 +307,6 @@ export function ArchitectureDiagram() {
             markerEnd="url(#flowArrow)"
           />
 
-          {/* Spring Boot -> Redis */}
           <path
             d="M 474 220 C 560 220, 560 90, 626 90"
             fill="none"
@@ -313,7 +315,6 @@ export function ArchitectureDiagram() {
             markerEnd="url(#flowArrow)"
           />
 
-          {/* Spring Boot -> PostgreSQL */}
           <path
             d="M 474 220 L 626 220"
             stroke="rgba(0,0,0,0.14)"
@@ -321,7 +322,6 @@ export function ArchitectureDiagram() {
             markerEnd="url(#flowArrow)"
           />
 
-          {/* Spring Boot -> Kafka */}
           <path
             d="M 474 220 C 560 220, 560 350, 626 350"
             fill="none"
@@ -330,7 +330,6 @@ export function ArchitectureDiagram() {
             markerEnd="url(#flowArrow)"
           />
 
-          {/* Spring Boot -> Prometheus (telemetry) */}
           <path
             d="M 474 220 C 600 190, 740 110, 856 110"
             fill="none"
@@ -340,7 +339,6 @@ export function ArchitectureDiagram() {
             markerEnd="url(#telemArrow)"
           />
 
-          {/* Spring Boot -> Promtail (telemetry) */}
           <path
             d="M 474 220 C 600 250, 740 330, 856 330"
             fill="none"
@@ -350,7 +348,6 @@ export function ArchitectureDiagram() {
             markerEnd="url(#telemArrow)"
           />
 
-          {/* Prometheus -> Grafana */}
           <path
             d="M 924 110 L 1076 110"
             stroke="rgba(0,0,0,0.14)"
@@ -358,7 +355,6 @@ export function ArchitectureDiagram() {
             markerEnd="url(#flowArrow)"
           />
 
-          {/* Promtail -> Loki */}
           <path
             d="M 924 330 L 1076 330"
             stroke="rgba(0,0,0,0.14)"
@@ -366,7 +362,6 @@ export function ArchitectureDiagram() {
             markerEnd="url(#flowArrow)"
           />
 
-          {/* Loki -> Grafana */}
           <path
             d="M 1110 296 L 1110 144"
             stroke="rgba(0,0,0,0.14)"
@@ -377,20 +372,54 @@ export function ArchitectureDiagram() {
 
         {/* 2. Animated Emerald Flow Packets */}
         <g>
-          {activePackets.map((pt, i) => (
-            <g key={i}>
-              <circle
-                cx={pt.x}
-                cy={pt.y}
-                r="11"
-                fill="#00D06C"
-                opacity="0.35"
-                filter="url(#emeraldGlow)"
-              />
-              <circle cx={pt.x} cy={pt.y} r="5" fill="#00D06C" />
-              <circle cx={pt.x} cy={pt.y} r="2" fill="#FFFFFF" />
-            </g>
-          ))}
+          {activePackets.map((pt, i) => {
+            const textWidth = (pt.label?.length || 0) * 6 + 18;
+            const halfWidth = textWidth / 2;
+            const offsetX = pt.offset?.x ?? 0;
+            const offsetY = pt.offset?.y ?? -16;
+            const labelX = pt.x + offsetX;
+            const labelY = pt.y + offsetY;
+
+            return (
+              <g key={i}>
+                <circle
+                  cx={pt.x}
+                  cy={pt.y}
+                  r="10"
+                  fill="#00D06C"
+                  opacity="0.35"
+                  filter="url(#emeraldGlow)"
+                />
+                <circle cx={pt.x} cy={pt.y} r="4.5" fill="#00D06C" />
+                <circle cx={pt.x} cy={pt.y} r="1.5" fill="#FFFFFF" />
+
+                {pt.label && pt.labelOpacity > 0.05 && (
+                  <g opacity={pt.labelOpacity} className="pointer-events-none select-none">
+                    <rect
+                      x={labelX - halfWidth}
+                      y={labelY - 9}
+                      width={textWidth}
+                      height="18"
+                      rx="9"
+                      fill="#FFFFFF"
+                      fillOpacity="0.95"
+                      stroke="rgba(0,0,0,0.08)"
+                      strokeWidth="1"
+                      filter="url(#tileShadow)"
+                    />
+                    <text
+                      x={labelX}
+                      y={labelY + 3.5}
+                      textAnchor="middle"
+                      className="font-sans text-[10px] font-medium fill-[#1D1D1F] tracking-tight"
+                    >
+                      {pt.label}
+                    </text>
+                  </g>
+                )}
+              </g>
+            );
+          })}
         </g>
 
         {/* 3. 10 Architecture Nodes */}
@@ -400,7 +429,6 @@ export function ArchitectureDiagram() {
 
           return (
             <g key={node.id}>
-              {/* Active pulse aura */}
               {pulse > 0.05 && (
                 <rect
                   x={node.x - 36}
@@ -416,7 +444,6 @@ export function ArchitectureDiagram() {
                 />
               )}
 
-              {/* Sleek Dark Squircle Tile 68x68 */}
               <rect
                 x={node.x - 34}
                 y={node.y - 34}
@@ -429,7 +456,6 @@ export function ArchitectureDiagram() {
                 filter="url(#tileShadow)"
               />
 
-              {/* Exact Logo from Directory */}
               {logo && (
                 <svg
                   x={node.x - 18}
@@ -442,14 +468,21 @@ export function ArchitectureDiagram() {
                 />
               )}
 
-              {/* Little Node Name Underneath */}
               <text
                 x={node.x}
-                y={node.y + 54}
+                y={node.y + 53}
                 textAnchor="middle"
                 className="font-sans font-semibold text-[13px] fill-[#1D1D1F] tracking-tight select-none"
               >
                 {node.name}
+              </text>
+              <text
+                x={node.x}
+                y={node.y + 68}
+                textAnchor="middle"
+                className="font-sans font-normal text-[11px] fill-[#86868B] tracking-normal select-none"
+              >
+                {node.subtitle}
               </text>
             </g>
           );
