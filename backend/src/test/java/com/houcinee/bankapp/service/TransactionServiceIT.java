@@ -6,7 +6,6 @@ import com.houcinee.bankapp.model.Account;
 import com.houcinee.bankapp.model.AppUser;
 import com.houcinee.bankapp.repository.AccountRepository;
 import com.houcinee.bankapp.repository.UserRepository;
-import com.houcinee.bankapp.repository.TransactionRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

@@ -20,7 +20,6 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import java.time.LocalDateTime;
 
 import com.houcinee.bankapp.service.AuditService;
-import com.houcinee.bankapp.exception.TransferFailedException;
 import lombok.RequiredArgsConstructor;
 
 @Slf4j

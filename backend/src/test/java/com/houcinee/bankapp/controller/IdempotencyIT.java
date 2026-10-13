@@ -10,7 +10,6 @@ import com.houcinee.bankapp.enums.Currency;
 import com.houcinee.bankapp.model.Account;
 import com.houcinee.bankapp.repository.AccountRepository;
 import com.houcinee.bankapp.repository.TransactionRepository;
-import com.houcinee.bankapp.repository.UserRepository;
 import com.houcinee.bankapp.service.BaseIntegrationTest;
 import com.jayway.jsonpath.JsonPath;
 import jakarta.servlet.http.Cookie;

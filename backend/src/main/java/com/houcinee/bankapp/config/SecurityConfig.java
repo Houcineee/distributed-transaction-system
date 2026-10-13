@@ -2,7 +2,6 @@ package com.houcinee.bankapp.config;
 
 import com.houcinee.bankapp.filter.IdempotencyFilter;
 import com.houcinee.bankapp.filter.JwtAuthenticationFilter;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

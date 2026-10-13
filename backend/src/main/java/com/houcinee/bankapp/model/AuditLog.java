@@ -3,7 +3,6 @@ package com.houcinee.bankapp.model;
 import com.houcinee.bankapp.enums.AuditAction;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

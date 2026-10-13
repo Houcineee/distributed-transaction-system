@@ -1,8 +1,6 @@
 package com.houcinee.bankapp.controller;
 
 
-import com.houcinee.bankapp.exception.BankingException;
-import com.houcinee.bankapp.exception.ResourceNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;

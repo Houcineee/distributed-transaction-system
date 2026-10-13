@@ -1,7 +1,8 @@
 package com.houcinee.bankapp.dto;
 
 import com.houcinee.bankapp.enums.Role;
-import lombok.*;
+import lombok.Builder;
+import lombok.Getter;
 
 import java.time.Instant;
 import java.util.UUID;

@@ -1,8 +1,5 @@
 package com.houcinee.bankapp.security;
 
-import com.houcinee.bankapp.model.Account;
-import com.houcinee.bankapp.model.AppUser;
-import com.houcinee.bankapp.model.Card;
 import com.houcinee.bankapp.repository.AccountRepository;
 import com.houcinee.bankapp.repository.CardRepository;
 import org.junit.jupiter.api.Test;
@@ -11,9 +8,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
-import org.springframework.test.util.ReflectionTestUtils;
-
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;

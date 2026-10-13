@@ -1,7 +1,6 @@
 package com.houcinee.bankapp.service;
 
 import com.houcinee.bankapp.dto.CardResponse;
-import com.houcinee.bankapp.enums.CardStatus;
 import com.houcinee.bankapp.enums.CardType;
 import com.houcinee.bankapp.exception.ResourceNotFoundException;
 import com.houcinee.bankapp.model.Account;
