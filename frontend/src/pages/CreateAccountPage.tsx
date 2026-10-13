@@ -72,7 +72,7 @@ export function CreateAccountPage() {
         return;
       }
 
-      navigate("/dashboard");
+      navigate("/dashboard?welcomeBonus=true");
     } catch {
       setServerError("Account service unreachable. Please check connection.");
     }

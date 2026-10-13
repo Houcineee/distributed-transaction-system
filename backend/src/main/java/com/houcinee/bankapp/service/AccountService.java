@@ -39,7 +39,7 @@ public class AccountService {
 
 		AppUser appUser = userRepository.findById(req.getUserId())
 		                                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + req.getUserId()));
-		Account account = new Account(0L ,req.getCurrency() , appUser);
+		Account account = new Account(50000L, req.getCurrency(), appUser);
 		account = accountRepository.save(account);
 
 		// Automatically issue the requested card type for the new account

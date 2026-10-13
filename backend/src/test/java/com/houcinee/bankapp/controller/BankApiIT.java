@@ -117,7 +117,7 @@ public class BankApiIT extends BaseIntegrationTest {
 
 		mockMvc.perform(get("/api/v1/accounts/" + accountBId).cookie(new Cookie("jwt", tokenB)))
 		       .andExpect(status().isOk())
-		       .andExpect(jsonPath("$.balance").value("50.00"));
+		       .andExpect(jsonPath("$.balance").value("550.00"));
 
 		// 9. Verify Transaction History
 		mockMvc.perform(get("/api/v1/accounts/" + accountAId + "/transactions?page=0&size=10").cookie(new Cookie("jwt", tokenA)))
@@ -155,11 +155,11 @@ public class BankApiIT extends BaseIntegrationTest {
 		String accountCId = createAccount(userCId, tokenC); // Balance starts at 0
 		String accountDId = createAccount(userDId, tokenD); // Balance starts at 0
 
-		// 2. Attempt to transfer $50.00 when balance is 0
+		// 2. Attempt to transfer $600.00 when balance is $500.00
 		TransactionRequest transferReq = TransactionRequest.builder()
 		                                                   .srcAccount(UUID.fromString(accountCId))
 		                                                   .destAccount(UUID.fromString(accountDId))
-		                                                   .amount(5000L) // $50.00
+		                                                   .amount(60000L) // $600.00
 		                                                   .build();
 
 		mockMvc.perform(post("/api/v1/transfers").cookie(new Cookie("jwt", tokenC))
@@ -168,10 +168,10 @@ public class BankApiIT extends BaseIntegrationTest {
 		       .andExpect(status().isBadRequest())
 		       .andExpect(jsonPath("$.message").value("Insufficient balance in source account"));
 
-		// 3. Verify Balances remained 0 (Rolled back)
+		// 3. Verify Balances remained 500.00 (Rolled back)
 		mockMvc.perform(get("/api/v1/accounts/" + accountCId).cookie(new Cookie("jwt", tokenC)))
 		       .andExpect(status().isOk())
-		       .andExpect(jsonPath("$.balance").value("0.00"));
+		       .andExpect(jsonPath("$.balance").value("500.00"));
 
 		// 4. Verify NO transaction ledger entry was committed (Atomic Rollback)
 		mockMvc.perform(get("/api/v1/accounts/" + accountCId + "/transactions").cookie(new Cookie("jwt", tokenC)))

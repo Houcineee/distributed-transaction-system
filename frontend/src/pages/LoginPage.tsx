@@ -32,7 +32,7 @@ export function LoginPage() {
 
   const registeredMessage =
     new URLSearchParams(location.search).get("registered") === "true"
-      ? "Account created. Time to face reality."
+      ? "Account created successfully. Please sign in."
       : null;
 
   const onSubmit = async (data: LoginFormData) => {
@@ -44,23 +44,24 @@ export function LoginPage() {
       });
       if (loginError) {
         setServerError(
-          getApiErrorMessage(loginError, "Wrong credentials. Did you forget your own password again?")
+          getApiErrorMessage(loginError, "Invalid email or password. Please try again.")
         );
         return;
       }
       const { data: userData, error: meError } = await client.GET("/api/v1/users/me");
       if (meError || !userData) {
-        setServerError("Signed in, but we couldn't find your portfolio. Don't panic.");
+        setServerError("Unable to load account portfolio. Please refresh or try again.");
         return;
       }
       setUser(userData);
       if (userData.role === "ADMIN") {
         navigate("/admin");
       } else {
-        navigate("/dashboard");
+        const wasRegistered = new URLSearchParams(location.search).get("registered") === "true";
+        navigate(wasRegistered ? "/dashboard?welcomeBonus=true" : "/dashboard");
       }
     } catch {
-      setServerError("Servers unreachable. Enjoy the brief moment of financial plausible deniability.");
+      setServerError("Unable to connect to Cine servers. Please check your internet connection.");
     }
   };
 
@@ -75,10 +76,10 @@ export function LoginPage() {
         {/* Headings */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-normal tracking-[-0.03em] text-[#1D1D1F] mb-2">
-            Return of the big spender.
+            Welcome back
           </h1>
           <p className="text-xs text-[#86868B] leading-relaxed">
-            Take a deep breath. Your zero balance is safe with us.
+            Sign in to your Cine account.
           </p>
         </div>
 
@@ -107,18 +108,13 @@ export function LoginPage() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-semibold text-[#86868B] uppercase tracking-wider">
-                Email Address
-              </label>
-              <span className="text-[10px] text-[#86868B]/80 italic">
-                The one you never check
-              </span>
-            </div>
+            <label className="block text-xs font-semibold text-[#86868B] uppercase tracking-wider mb-1.5">
+              Email Address
+            </label>
             <input
               type="email"
               {...register("email")}
-              placeholder="future.billionaire@domain.com"
+              placeholder="houcine@example.com"
               className="w-full px-4 py-3.5 rounded-2xl border border-transparent bg-[#F5F5F7] focus:bg-white focus:border-[#C5A059]/50 focus:ring-2 focus:ring-[#C5A059]/15 text-sm text-[#1D1D1F] focus:outline-none transition-all placeholder:text-[#86868B]/50"
             />
             {errors.email && (
@@ -129,14 +125,9 @@ export function LoginPage() {
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-semibold text-[#86868B] uppercase tracking-wider">
-                Password
-              </label>
-              <span className="text-[10px] text-[#86868B]/80 italic">
-                Not 'password123' again
-              </span>
-            </div>
+            <label className="block text-xs font-semibold text-[#86868B] uppercase tracking-wider mb-1.5">
+              Password
+            </label>
             <input
               type="password"
               {...register("password")}
@@ -158,10 +149,10 @@ export function LoginPage() {
             {isSubmitting ? (
               <div className="flex items-center gap-2 text-xs">
                 <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                <span>Preparing emotional support...</span>
+                <span>Signing in...</span>
               </div>
             ) : (
-              <span>Inspect the Damage</span>
+              <span>Sign In</span>
             )}
           </button>
 
@@ -172,7 +163,7 @@ export function LoginPage() {
             >
               Don't have an account?{" "}
               <span className="font-semibold underline underline-offset-4 decoration-black/20 hover:decoration-black text-[#1D1D1F]">
-                Start your financial delusion here.
+                Create an account
               </span>
             </Link>
           </div>

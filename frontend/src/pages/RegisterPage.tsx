@@ -8,13 +8,13 @@ import { CurrencyIcon } from "../components/CurrencyIcon";
 import { CineLogo } from "../components/CineLogo";
 
 const registerSchema = z.object({
-  name: z.string().min(2, "We need a real name. At least two letters."),
-  email: z.string().email("That email isn't fooling anyone. Try a real one."),
-  password: z.string().min(8, "At least 8 characters. Please don't make it your dog's birthday."),
+  name: z.string().min(2, "Please enter your full legal name."),
+  email: z.string().email("Please enter a valid email address."),
+  password: z.string().min(8, "Password must be at least 8 characters."),
   currency: z.enum(["USD", "EUR", "GBP", "MAD"]),
   cardType: z.enum(["DEBIT", "CREDIT"]),
   terms: z.boolean().refine((val) => val === true, {
-    message: "You must surrender your rights to our transparently terrible terms.",
+    message: "You must agree to the Terms of Service to continue.",
   }),
 });
 
@@ -83,12 +83,12 @@ export function RegisterPage() {
         },
       });
       if (error) {
-        setServerError(getApiErrorMessage(error, "Registration rejected. Even the database had second thoughts."));
+        setServerError(getApiErrorMessage(error, "Unable to create account. Please review your details and try again."));
         return;
       }
       navigate("/login?registered=true");
     } catch {
-      setServerError("Network failed. You were this close to financial responsibility.");
+      setServerError("Unable to connect to Cine servers. Please check your internet connection.");
     }
   };
 
@@ -100,8 +100,8 @@ export function RegisterPage() {
   ];
 
   const cardOptions = [
-    { type: "DEBIT" as const, label: "Debit", sub: "Real money" },
-    { type: "CREDIT" as const, label: "Credit", sub: "Future you's problem" },
+    { type: "DEBIT" as const, label: "Debit", sub: "Debit card" },
+    { type: "CREDIT" as const, label: "Credit", sub: "Credit card" },
   ];
 
   return (
@@ -118,7 +118,7 @@ export function RegisterPage() {
             Open an account
           </h1>
           <p className="text-xs text-[#86868B] leading-relaxed">
-            Takes 30 seconds. Financial discipline sold separately.
+            Takes less than a minute. Free to get started.
           </p>
         </div>
 
@@ -136,18 +136,13 @@ export function RegisterPage() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           {/* Full Name */}
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-semibold text-[#86868B] uppercase tracking-wider">
-                Legal Name
-              </label>
-              <span className="text-[10px] text-[#86868B]/80 italic">
-                Not your gamer tag
-              </span>
-            </div>
+            <label className="block text-xs font-semibold text-[#86868B] uppercase tracking-wider mb-1.5">
+              Legal Name
+            </label>
             <input
               type="text"
               {...register("name")}
-              placeholder="e.g. John Doe"
+              placeholder="Jane Doe"
               className="w-full px-4 py-3.5 rounded-2xl border border-transparent bg-[#F5F5F7] focus:bg-white focus:border-black/20 text-sm text-[#1D1D1F] focus:outline-none transition-all placeholder:text-[#86868B]/50"
             />
             {errors.name && (
@@ -159,18 +154,13 @@ export function RegisterPage() {
 
           {/* Email */}
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-semibold text-[#86868B] uppercase tracking-wider">
-                Email Address
-              </label>
-              <span className="text-[10px] text-[#86868B]/80 italic">
-                Statements you won't open go here
-              </span>
-            </div>
+            <label className="block text-xs font-semibold text-[#86868B] uppercase tracking-wider mb-1.5">
+              Email Address
+            </label>
             <input
               type="email"
               {...register("email")}
-              placeholder="you@example.com"
+              placeholder="houcine@example.com"
               className="w-full px-4 py-3.5 rounded-2xl border border-transparent bg-[#F5F5F7] focus:bg-white focus:border-black/20 text-sm text-[#1D1D1F] focus:outline-none transition-all placeholder:text-[#86868B]/50"
             />
             {errors.email && (
@@ -187,7 +177,7 @@ export function RegisterPage() {
                 Password
               </label>
               <span className="text-[10px] text-[#86868B]/80 italic">
-                Something you'll reset next Tuesday
+                At least 8 characters
               </span>
             </div>
             <input
@@ -381,7 +371,7 @@ export function RegisterPage() {
                 </div>
               </div>
               <span className="text-xs text-[#86868B] leading-snug">
-                I have read and unconditionally surrender to the{" "}
+                I agree to the{" "}
                 <button
                   type="button"
                   onClick={(e) => {
@@ -391,9 +381,9 @@ export function RegisterPage() {
                   }}
                   className="font-semibold text-[#1D1D1F] underline underline-offset-2 decoration-black/20 hover:decoration-black cursor-pointer"
                 >
-                  Terms & Conditions
-                </button>{" "}
-                of total financial surrender.
+                  Terms of Service
+                </button>
+                .
               </span>
             </label>
             {errors.terms && (
@@ -411,10 +401,10 @@ export function RegisterPage() {
             {isSubmitting ? (
               <div className="flex items-center gap-2 text-xs">
                 <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                <span>Simulating financial maturity...</span>
+                <span>Creating account...</span>
               </div>
             ) : (
-              <span>Open Account & Hope for the Best</span>
+              <span>Create Account</span>
             )}
           </button>
 
@@ -423,9 +413,9 @@ export function RegisterPage() {
               to="/login"
               className="text-xs text-[#86868B] hover:text-[#1D1D1F] transition-colors"
             >
-              Already registered?{" "}
+              Already have an account?{" "}
               <span className="font-semibold underline underline-offset-4 decoration-black/20 hover:decoration-black text-[#1D1D1F]">
-                Go get hurt again.
+                Sign in
               </span>
             </Link>
           </div>
@@ -445,14 +435,14 @@ export function RegisterPage() {
             {/* Header */}
             <div className="p-6 md:p-7 border-b border-black/[0.06] flex items-start justify-between bg-[#FAFAFC]">
               <div>
-                <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-100 text-red-700 mb-2">
-                  Non-Negotiable Surrender Pact
+                <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-black/5 text-[#1D1D1F] mb-2">
+                  Account Terms
                 </span>
                 <h2 className="text-xl font-semibold tracking-tight text-[#1D1D1F]">
-                  Terms of Exploitation & Surrender
+                  Terms of Service
                 </h2>
                 <p className="text-xs text-[#86868B] mt-0.5">
-                  Read carefully. Or don't. We'll still take your money.
+                  Standard account terms and regulatory disclosures.
                 </p>
               </div>
               <button
@@ -471,55 +461,55 @@ export function RegisterPage() {
             <div className="p-6 md:p-7 overflow-y-auto space-y-4 text-xs text-[#1D1D1F] leading-relaxed">
               <div className="p-4 rounded-2xl bg-[#F5F5F7] border border-black/[0.04]">
                 <div className="font-semibold text-[#1D1D1F] mb-1">
-                  Article 1: Asset Relocation (What's Yours Is Ours)
+                  1. Account Custody & Funds Segregation
                 </div>
                 <p className="text-[#86868B]">
-                  Upon deposit, legal title to your money transfers immediately to Cine. Your displayed balance is merely an artistic representation of numbers we thought looked neat. If your balance drops to 0.00 DH overnight, please view this as a non-consensual exercise in financial minimalism.
+                  Client deposits are maintained in segregated depository accounts with regulated banking partners. Cine maintains strict balance fidelity; client funds are never commingled with corporate operational capital.
                 </p>
               </div>
 
               <div className="p-4 rounded-2xl bg-[#F5F5F7] border border-black/[0.04]">
                 <div className="font-semibold text-[#1D1D1F] mb-1">
-                  Article 2: Aggressive Data Harvesting & Shadow Brokers
+                  2. Data Privacy & Cryptographic Security
                 </div>
                 <p className="text-[#86868B]">
-                  We collect, track, and auction everything: your keystrokes, your 3 AM impulsive purchases, your heart rate when opening your banking app, and your ex-partner's location history. We reserve the unrestricted right to package and sell this data to predatory ad networks, sketchy telemarketers, and your mother.
+                  All account interactions, credentials, and transaction histories are protected by AES-256 encryption at rest and TLS 1.3 in transit. Cine does not sell personal financial records, transaction metadata, or telemetry to third parties.
                 </p>
               </div>
 
               <div className="p-4 rounded-2xl bg-[#F5F5F7] border border-black/[0.04]">
                 <div className="font-semibold text-[#1D1D1F] mb-1">
-                  Article 3: Executive Slush & Spontaneous Embezzlement
+                  3. Transaction Execution & Audit Trail
                 </div>
                 <p className="text-[#86868B]">
-                  From time to time, our executives may dip into your savings to fund Mediterranean yacht leases, bespoke espresso machines, or high-stakes speculative dogecoin trades. You agree not to file inquiries regarding mysterious charges labeled <code className="px-1.5 py-0.5 bg-black/5 rounded text-[10px] text-[#1D1D1F] font-mono">SYSTEM_MAINTENANCE_FEELING_CUTE</code>.
+                  Every balance movement is backed by an immutable ledger entry and cryptographic authorization. All debit and credit settlements are triggered solely by authenticated account holders.
                 </p>
               </div>
 
               <div className="p-4 rounded-2xl bg-[#F5F5F7] border border-black/[0.04]">
                 <div className="font-semibold text-[#1D1D1F] mb-1">
-                  Article 4: Disclaimers & Total Absence of Liability
+                  4. High Availability & Balance Protection
                 </div>
                 <p className="text-[#86868B]">
-                  Cine is not insured by Bank Al-Maghrib, the FDIC, Interpol, or God. If our servers catch fire, our database administrator accidentally drops the production schema, or we simply lose your records, you agree that your life savings were simply &ldquo;a concept that didn't work out.&rdquo;
+                  Cine operates redundant, multi-region distributed infrastructure with continuous automated replication. Account balances remain fully protected and restorable from verifiable ledger checkpoints.
                 </p>
               </div>
 
               <div className="p-4 rounded-2xl bg-[#F5F5F7] border border-black/[0.04]">
                 <div className="font-semibold text-[#1D1D1F] mb-1">
-                  Article 5: Dispute Resolution by Armed Coin Toss
+                  5. Dispute Resolution & Cardholder Protection
                 </div>
                 <p className="text-[#86868B]">
-                  You waive all rights to a fair trial, class-action lawsuits, ombudsmen, and common decency. All legal grievances will be resolved via a single toss of our proprietary double-tailed coin, where we call tails. Our decision is final, legally binding, and accompanied by gentle mocking.
+                  Cardholders benefit from standard zero-liability protection on unauthorized transactions. In the event of a billing dispute or unexpected charge, inquiries can be raised directly for prompt investigation.
                 </p>
               </div>
 
               <div className="p-4 rounded-2xl bg-[#F5F5F7] border border-black/[0.04]">
                 <div className="font-semibold text-[#1D1D1F] mb-1">
-                  Article 6: Mandatory Emotional Degradation
+                  6. Account Alerts & Communications
                 </div>
                 <p className="text-[#86868B]">
-                  Our automated AI ledger reserves the right to send unsolicited push notifications judging your fiscal decisions (e.g., &ldquo;Third latte today? That's why you don't own real estate.&rdquo;). By continuing, you agree to be judged.
+                  Cine delivers real-time transactional alerts, security confirmations, and periodic statements. Customers may customize notification channels and preferences within their account settings.
                 </p>
               </div>
             </div>
@@ -534,14 +524,14 @@ export function RegisterPage() {
                 }}
                 className="w-full sm:flex-1 py-3 px-4 rounded-full bg-[#1D1D1F] hover:bg-black text-white text-xs font-semibold tracking-wide transition-all shadow-sm active:scale-[0.98] cursor-pointer text-center"
               >
-                I Surrender & Accept Everything
+                Accept Terms
               </button>
               <button
                 type="button"
                 onClick={() => setIsTermsOpen(false)}
                 className="w-full sm:w-auto py-3 px-4 rounded-full bg-black/5 hover:bg-black/10 text-[#1D1D1F] text-xs font-semibold transition-all active:scale-[0.98] cursor-pointer text-center"
               >
-                I'll Pretend I Didn't Read This
+                Close
               </button>
             </div>
           </div>

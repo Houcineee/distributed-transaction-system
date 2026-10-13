@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import { client } from "../lib/api";
 import { SideNav } from "../components/SideNav";
@@ -17,12 +17,14 @@ type TransactionResponse = components["schemas"]["TransactionResponse"];
 
 export function DashboardPage() {
   const { user } = useAuth();
+  const location = useLocation();
   const [accounts, setAccounts] = useState<AccountResponse[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [cards, setCards] = useState<CardResponse[]>([]);
   const [transactions, setTransactions] = useState<TransactionResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [isNewAccountOpen, setIsNewAccountOpen] = useState(false);
+  const [showWelcomeBonusBanner, setShowWelcomeBonusBanner] = useState(false);
 
   // Activity Pagination State
   const [txPage, setTxPage] = useState(0);
@@ -51,6 +53,23 @@ export function DashboardPage() {
     }
     fetchAccounts();
   }, [user]);
+
+  // Check URL query parameters for welcomeBonus
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("welcomeBonus") === "true") {
+      setShowWelcomeBonusBanner(true);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [location.search]);
+
+  // Auto-dismiss welcome bonus banner after 7 seconds
+  useEffect(() => {
+    if (showWelcomeBonusBanner) {
+      const timer = setTimeout(() => setShowWelcomeBonusBanner(false), 7000);
+      return () => clearTimeout(timer);
+    }
+  }, [showWelcomeBonusBanner]);
 
   // Reset page to 0 when selected account changes
   useEffect(() => {
@@ -178,6 +197,7 @@ export function DashboardPage() {
       if (data?.length) {
         setAccounts(data);
         setSelectedAccountId(newAccountId);
+        setShowWelcomeBonusBanner(true);
       }
     } catch (err) {
       console.error(err);
@@ -220,6 +240,42 @@ export function DashboardPage() {
             </button>
           </div>
         </header>
+
+        {/* Welcome Bonus Banner */}
+        {showWelcomeBonusBanner && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="mb-8 p-4 md:px-6 rounded-2xl bg-white border border-[#00D06C]/30 shadow-[0_4px_24px_-4px_rgba(0,208,108,0.15)] flex items-center justify-between transition-all duration-300 animate-in fade-in slide-in-from-top-2"
+          >
+            <div className="flex items-center gap-3.5 md:gap-4">
+              <div className="w-9 h-9 rounded-full bg-[#00D06C]/15 text-[#008A44] flex items-center justify-center shrink-0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </div>
+              <div className="space-y-0.5">
+                <div className="text-sm font-semibold text-[#1D1D1F] tracking-tight">
+                  Proof we&apos;re the best bank.
+                </div>
+                <div className="text-xs text-[#008A44] font-medium">
+                  <span className="font-semibold tabular-nums">$500.00</span> on us, ready to move right now.
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowWelcomeBonusBanner(false)}
+              aria-label="Dismiss banner"
+              className="w-7 h-7 rounded-full bg-black/5 hover:bg-black/10 flex items-center justify-center text-[#1D1D1F]/60 hover:text-[#1D1D1F] transition-colors cursor-pointer shrink-0 ml-4"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+        )}
 
         {/* Hero Section: Balance & Physical Card */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-12">

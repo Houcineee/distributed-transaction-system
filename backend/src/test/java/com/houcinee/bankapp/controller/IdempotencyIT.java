@@ -132,11 +132,11 @@ public class IdempotencyIT extends BaseIntegrationTest {
 				.andExpect(jsonPath("$.status").value("COMPLETED"))
 				.andReturn();
 
-		// Check DB: Alice balance is $60, Bob is $40, transaction count is 1
+		// Check DB: Alice balance is $60, Bob is $540, transaction count is 1
 		Account aliceAccount = accountRepository.findById(UUID.fromString(accountAId)).orElseThrow();
 		Account bobAccount = accountRepository.findById(UUID.fromString(accountBId)).orElseThrow();
 		assertEquals(6000L, aliceAccount.getBalance());
-		assertEquals(4000L, bobAccount.getBalance());
+		assertEquals(54000L, bobAccount.getBalance());
 		assertEquals(1, transactionRepository.count());
 
 		// 6. Second request with exact same Idempotency-Key and body
@@ -157,7 +157,7 @@ public class IdempotencyIT extends BaseIntegrationTest {
 		Account aliceAccountAfter = accountRepository.findById(UUID.fromString(accountAId)).orElseThrow();
 		Account bobAccountAfter = accountRepository.findById(UUID.fromString(accountBId)).orElseThrow();
 		assertEquals(6000L, aliceAccountAfter.getBalance());
-		assertEquals(4000L, bobAccountAfter.getBalance());
+		assertEquals(54000L, bobAccountAfter.getBalance());
 		assertEquals(1, transactionRepository.count());
 	}
 

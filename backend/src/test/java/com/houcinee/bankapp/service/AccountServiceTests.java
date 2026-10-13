@@ -65,7 +65,7 @@ public class AccountServiceTests {
 		AccountResponse accountResponse = accountService.createAccount(accountRequest);
 
 
-		assertEquals("0.00", accountResponse.getBalance());
+		assertEquals("500.00", accountResponse.getBalance());
 		assertEquals(appUser.getId(), accountResponse.getUserId());
 
 		// Verify that a DEBIT card was automatically issued for the new account
