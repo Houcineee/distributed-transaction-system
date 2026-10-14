@@ -53,7 +53,7 @@ export function LandingPage() {
             </Link>
 
             <a
-              href="https://github.com/Houcineee/bank-app"
+              href="https://github.com/Houcineee/distributed-transaction-system"
               target="_blank"
               rel="noopener noreferrer"
               className="w-full sm:w-auto px-6 py-3.5 rounded-full bg-black/5 hover:bg-black/10 text-[#1D1D1F] text-sm font-semibold transition-all active:scale-[0.98] flex items-center justify-center gap-2"
@@ -240,7 +240,7 @@ export function LandingPage() {
               Register
             </Link>
             <a
-              href="https://github.com/Houcineee/bank-app"
+              href="https://github.com/Houcineee/distributed-transaction-system"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-[#1D1D1F] transition-colors"

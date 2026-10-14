@@ -2,7 +2,7 @@
 
 A fault-tolerant **distributed transaction system** and financial ledger built with Java 21, Spring Boot 3.3, PostgreSQL 17, Redis 7, and Apache Kafka 3.8. Engineered for ACID isolation, HTTP idempotency, deadlock-free concurrency, and at-least-once event delivery.
 
-![CI](https://github.com/Houcineee/bank-app/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/Houcineee/distributed-transaction-system/actions/workflows/ci.yml/badge.svg)
 ![Java](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.3-6DB33F?logo=springboot&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?logo=postgresql&logoColor=white)
