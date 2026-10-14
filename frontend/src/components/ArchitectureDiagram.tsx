@@ -91,6 +91,14 @@ const getNodePulse = (p: number, center: number, radius = 0.05) => {
   return Math.sin(((radius - dist) / radius) * (Math.PI / 2));
 };
 
+interface PacketPos {
+  x: number;
+  y: number;
+  label?: string;
+  offset: { x: number; y: number };
+  labelOpacity: number;
+}
+
 const getPacketPos = (
   p: number,
   startP: number,
@@ -98,7 +106,7 @@ const getPacketPos = (
   calc: (t: number) => { x: number; y: number },
   label?: string,
   offset: { x: number; y: number } = { x: 0, y: -16 }
-) => {
+): PacketPos | null => {
   if (p < startP || p > endP) return null;
   const t = smoothStep(startP, endP, p);
   const pos = calc(t);
@@ -234,17 +242,7 @@ export function ArchitectureDiagram() {
     packetPrometheusToGrafana,
     packetPromtailToLoki,
     packetLokiToGrafana,
-  ].filter(
-    (
-      pos
-    ): pos is {
-      x: number;
-      y: number;
-      label?: string;
-      offset: { x: number; y: number };
-      labelOpacity: number;
-    } => pos !== null
-  );
+  ].filter((pos): pos is PacketPos => pos !== null);
 
   return (
     <div className="w-full max-w-6xl mx-auto my-10 select-none">
