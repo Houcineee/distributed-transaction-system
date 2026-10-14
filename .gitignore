@@ -6,6 +6,7 @@ findings/
 **/application-dev.properties
 
 .agents/
+.hallmark/
 # Java / Spring Boot
 target/
 *.class
